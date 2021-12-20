@@ -18,11 +18,7 @@ import { Link } from 'react-router-dom';
 
 const HelloPage: React.FC = () => {
   const getColor = () => {
-    return (function (m, s, c) {
-      return (
-        (c ? arguments.callee(m, s, c - 1) : '#') + s[m.floor(m.random() * 16)]
-      );
-    })(Math, '0123456789abcdef', 5);
+    return '#' + Math.floor(Math.random() * 16777215).toString(16);
   };
   const listData = [
     {

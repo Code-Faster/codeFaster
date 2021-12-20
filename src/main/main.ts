@@ -84,6 +84,14 @@ const createWindow = async () => {
     },
   });
 
+  app.setAboutPanelOptions({
+    iconPath: getAssetPath('icon.png'),
+    applicationName: 'Code Faster',
+    version:'0.0.1',
+    applicationVersion: '版本 0.0.1',
+    copyright: 'Copyright © 2021 Code Faster.',
+  });
+
   mainWindow.loadURL(resolveHtmlPath('index.html'));
 
   mainWindow.on('ready-to-show', () => {
