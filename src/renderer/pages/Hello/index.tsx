@@ -13,10 +13,20 @@ import {
 import styles from './index.module.less';
 import 'antd/dist/antd.variable.min.css';
 import Meta from 'antd/lib/card/Meta';
-import { Link } from 'react-router-dom';
-// import ProCard from '@ant-design/pro-card';
 
 const HelloPage: React.FC = () => {
+  const importProject = () => {
+    window.electron.ipcRenderer.execTask(
+      window.electron.task.openDirectoryDialog
+    );
+    window.electron.ipcRenderer.once(
+      window.electron.task.openDirectoryDialog,
+      (arg: any) => {
+        console.log(arg);
+      }
+    );
+  };
+  const createProject = () => {};
   const getColor = () => {
     return '#' + Math.floor(Math.random() * 16777215).toString(16);
   };
@@ -38,7 +48,6 @@ const HelloPage: React.FC = () => {
       color: getColor(),
     },
   ];
-
   return (
     <div style={{ padding: '20px' }}>
       <Card style={{ width: '100%', marginBottom: 15 }}>
@@ -59,10 +68,10 @@ const HelloPage: React.FC = () => {
         </Col>
         <Col span={10} className={styles.searchButtonArea}>
           <Space>
-            <Button type="primary" size="small">
+            <Button type="primary" size="small" onClick={createProject}>
               新建项目
             </Button>
-            <Button type="primary" size="small">
+            <Button type="primary" size="small" onClick={importProject}>
               导入项目
             </Button>
             <Button type="primary" size="small">
@@ -89,7 +98,7 @@ const HelloPage: React.FC = () => {
                   {item.title.substring(0, 1).toLocaleUpperCase()}
                 </Avatar>
               }
-              title={<a href="https://ant.design">{item.title}</a>}
+              title={item.title}
               description="~/Desktop/git/flJava/feilang"
             />
           </List.Item>

@@ -11,11 +11,13 @@
 import 'core-js/stable';
 import 'regenerator-runtime/runtime';
 import path from 'path';
-import { app, BrowserWindow, shell, ipcMain } from 'electron';
+import { app, BrowserWindow, shell, ipcMain, dialog } from 'electron';
 import { autoUpdater } from 'electron-updater';
 import log from 'electron-log';
 import MenuBuilder from './menu';
 import { resolveHtmlPath } from './util';
+import chalk from 'chalk';
+import packageJson from '../../package.json';
 
 export default class AppUpdater {
   constructor() {
@@ -26,13 +28,34 @@ export default class AppUpdater {
 }
 
 let mainWindow: BrowserWindow | null = null;
-
+/**
+ * 渲染进行调用主进程任务 start
+ */
 ipcMain.on('ipc-example', async (event, arg) => {
   const msgTemplate = (pingPong: string) => `IPC test: ${pingPong}`;
   console.log(msgTemplate(arg));
   event.reply('ipc-example', msgTemplate('pong'));
 });
-
+ipcMain.on('open-directory-dialog', async (event, arg) => {
+  console.log(chalk.blue(arg));
+  if (mainWindow) {
+    dialog
+      .showOpenDialog(mainWindow, {
+        properties: ['openFile', 'openDirectory'],
+      })
+      .then((result: { canceled: any; filePaths: any }) => {
+        console.log(result.canceled);
+        console.log(result.filePaths);
+        event.reply('open-directory-dialog', result.filePaths);
+      })
+      .catch((err: any) => {
+        console.log(err);
+      });
+  }
+});
+/**
+ * 渲染进行调用主进程任务 end
+ */
 if (process.env.NODE_ENV === 'production') {
   const sourceMapSupport = require('source-map-support');
   sourceMapSupport.install();
@@ -83,13 +106,16 @@ const createWindow = async () => {
       preload: path.join(__dirname, 'preload.js'),
     },
   });
-
+  // console.log(chalk.yellow('packageJson is ') + JSON.stringify(packageJson));
+  /**
+   * 设置应用about
+   */
   app.setAboutPanelOptions({
     iconPath: getAssetPath('icon.png'),
-    applicationName: 'Code Faster',
-    version:'0.0.1',
-    applicationVersion: '版本 0.0.1',
-    copyright: 'Copyright © 2021 Code Faster.',
+    applicationName: packageJson.name,
+    version: packageJson.version,
+    applicationVersion: `版本 ${packageJson.version}`,
+    copyright: `Copyright © 2021 ${packageJson.name}.`,
   });
 
   mainWindow.loadURL(resolveHtmlPath('index.html'));

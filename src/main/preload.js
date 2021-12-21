@@ -1,5 +1,4 @@
 const { contextBridge, ipcRenderer } = require('electron');
-
 contextBridge.exposeInMainWorld('electron', {
   ipcRenderer: {
     myPing() {
@@ -19,5 +18,12 @@ contextBridge.exposeInMainWorld('electron', {
         ipcRenderer.once(channel, (event, ...args) => func(...args));
       }
     },
+    execTask: (taskName) => ipcRenderer.send(taskName),
+  },
+  task: {
+    /**
+     * 打开文件系统
+     */
+    openDirectoryDialog: 'open-directory-dialog',
   },
 });

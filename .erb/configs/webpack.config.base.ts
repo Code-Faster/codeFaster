@@ -5,7 +5,6 @@
 import webpack from 'webpack';
 import webpackPaths from './webpack.paths';
 import { dependencies as externals } from '../../release/app/package.json';
-
 export default {
   externals: [...Object.keys(externals || {})],
 
@@ -26,7 +25,6 @@ export default {
       },
       {
         test: /\.less$/i,
-        // exclude: /node_modules/,
         use: [
           'style-loader',
           'css-loader',
@@ -55,7 +53,7 @@ export default {
    * Determine the array of extensions that should be used to resolve modules.
    */
   resolve: {
-    extensions: ['.js', '.jsx', '.json', '.ts', '.tsx'],
+    extensions: ['.js', '.jsx', '.json', '.ts', '.tsx', '.less'],
     modules: [webpackPaths.srcPath, 'node_modules'],
   },
 

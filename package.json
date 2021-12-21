@@ -1,5 +1,6 @@
 {
   "name": "code-faster",
+  "version": "0.0.1",
   "description": "CodeFaster帮助开发者更快、更安全、更高效的实现业务代码",
   "scripts": {
     "build": "concurrently \"npm run build:main\" \"npm run build:renderer\"",
