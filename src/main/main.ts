@@ -18,6 +18,7 @@ import MenuBuilder from './menu';
 import { resolveHtmlPath } from './util';
 import chalk from 'chalk';
 import packageJson from '../../package.json';
+import { openDirectoryDialog, example } from './task';
 
 export default class AppUpdater {
   constructor() {
@@ -31,12 +32,11 @@ let mainWindow: BrowserWindow | null = null;
 /**
  * 渲染进行调用主进程任务 start
  */
-ipcMain.on('ipc-example', async (event, arg) => {
+ipcMain.on(example, async (event, arg) => {
   const msgTemplate = (pingPong: string) => `IPC test: ${pingPong}`;
-  console.log(msgTemplate(arg));
-  event.reply('ipc-example', msgTemplate('pong'));
+  event.reply(example, msgTemplate('pong'));
 });
-ipcMain.on('open-directory-dialog', async (event, arg) => {
+ipcMain.on(openDirectoryDialog, async (event, arg) => {
   console.log(chalk.blue(arg));
   if (mainWindow) {
     dialog
@@ -44,9 +44,7 @@ ipcMain.on('open-directory-dialog', async (event, arg) => {
         properties: ['openFile', 'openDirectory'],
       })
       .then((result: { canceled: any; filePaths: any }) => {
-        console.log(result.canceled);
-        console.log(result.filePaths);
-        event.reply('open-directory-dialog', result.filePaths);
+        event.reply(openDirectoryDialog, result.filePaths);
       })
       .catch((err: any) => {
         console.log(err);

@@ -18,11 +18,10 @@ import {
   QuestionCircleTwoTone,
   ProjectOutlined,
   ControlOutlined,
-  BugOutlined,
-  CloudUploadOutlined,
   ArrowUpOutlined,
   GithubOutlined,
   PlusSquareOutlined,
+  AppstoreOutlined,
 } from '@ant-design/icons';
 import { useEffect } from 'react';
 const { Header, Sider, Content } = Layout;
@@ -35,6 +34,7 @@ import HelloPage from './pages/Hello';
 import CustomizePage from './pages/Customize';
 import PlusPage from './pages/Plus';
 import DocsPage from './pages/Docs';
+import TemplatePage from './pages/Template';
 /**
  *
  * @returns
@@ -57,8 +57,7 @@ const App = () => {
     <Layout style={{ height: '100%' }}>
       <Header className={'uDrag'} style={{ height: 48 }}>
         <Row style={{ height: 48, lineHeight: '48px' }}>
-          <Col span={23}>
-          </Col>
+          <Col span={23}></Col>
           <Col span={1}>
             <Space>
               <Tooltip title="发现新版本">
@@ -114,10 +113,10 @@ const App = () => {
             <Menu.Item key="3" icon={<PlusSquareOutlined />}>
               <Link to={`/plus`}>插件市场</Link>
             </Menu.Item>
-            {/* <Menu.Item key="2" icon={<ControlOutlined />}>
-              模型设计
+            <Menu.Item key="4" icon={<AppstoreOutlined />}>
+              <Link to={`/template`}>模版市场</Link>
             </Menu.Item>
-            <Menu.Item key="3" icon={<BugOutlined />}>
+            {/*  <Menu.Item key="3" icon={<BugOutlined />}>
               测试
             </Menu.Item>
             <Menu.Item key="4" icon={<CloudUploadOutlined />}>
@@ -147,6 +146,7 @@ const App = () => {
             <Route path="customize" element={<CustomizePage />}></Route>
             <Route path="plus" element={<PlusPage />}></Route>
             <Route path="docs" element={<DocsPage />}></Route>
+            <Route path="template" element={<TemplatePage/>}></Route>
             <Route path="*" element={<NoMatch />} />
           </Routes>
         </Content>
