@@ -3417,6 +3417,16 @@ detect-port@^1.3.0:
     address "^1.0.1"
     debug "^2.6.0"
 
+dexie-react-hooks@^1.1.1:
+  version "1.1.1"
+  resolved "https://registry.npmmirror.com/dexie-react-hooks/download/dexie-react-hooks-1.1.1.tgz#ff405cc89e5d899ddbac5e40d593f83f9a74106a"
+  integrity sha512-Cam5JP6PxHN564RvWEoe8cqLhosW0O4CAZ9XEVYeGHJBa6KEJlOpd9CUpV3kmU9dm2MrW97/lk7qkf1xpij7gA==
+
+dexie@^3.2.0:
+  version "3.2.0"
+  resolved "https://registry.npmmirror.com/dexie/download/dexie-3.2.0.tgz#a1b0267b111f9422c4126da90d6b121b1deabeab"
+  integrity sha512-OpS8ss1CLHYAhxRu6hT+/Gt1uLhKCf0O18xHBdRGlemOWXXRiiOZ0ty1/bACIJzGt1DGmvarzrPwYYt9EkRZfw==
+
 diff-sequences@^27.4.0:
   version "27.4.0"
   resolved "https://registry.npmmirror.com/diff-sequences/download/diff-sequences-27.4.0.tgz"

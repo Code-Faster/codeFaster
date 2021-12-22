@@ -1,17 +1,18 @@
 import { useState } from 'react';
 import { ColorResult, SketchPicker } from 'react-color';
 import { Button, Col, ConfigProvider, Row, Space, Typography } from 'antd';
-const { Title, Paragraph, Text, Link } = Typography;
+
+const { Title } = Typography;
 const CustomizePage: React.FC = () => {
   const bgColor = '#6667AB';
   const [color, setColor] = useState(bgColor);
-  const colorChage = (color: ColorResult) => {
+  const colorChage = (colorValue: ColorResult) => {
     ConfigProvider.config({
       theme: {
-        primaryColor: color.hex,
+        primaryColor: colorValue.hex,
       },
     });
-    setColor(color.hex);
+    setColor(colorValue.hex);
   };
   return (
     <div style={{ padding: '20px' }}>
@@ -49,8 +50,8 @@ const CustomizePage: React.FC = () => {
         </Col>
       </Row>
       <Space direction="vertical">
-        <Button type={'link'}>导入设置</Button>
-        <Button type={'link'}>全部设置</Button>
+        <Button type="link">导入设置</Button>
+        <Button type="link">全部设置</Button>
       </Space>
     </div>
   );

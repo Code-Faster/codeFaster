@@ -16,9 +16,8 @@ import { autoUpdater } from 'electron-updater';
 import log from 'electron-log';
 import MenuBuilder from './menu';
 import { resolveHtmlPath } from './util';
-import chalk from 'chalk';
 import packageJson from '../../package.json';
-import { openDirectoryDialog, example } from './task';
+import ipcHandler from './ipcHandler';
 
 export default class AppUpdater {
   constructor() {
@@ -27,30 +26,7 @@ export default class AppUpdater {
     autoUpdater.checkForUpdatesAndNotify();
   }
 }
-
 let mainWindow: BrowserWindow | null = null;
-/**
- * 渲染进行调用主进程任务 start
- */
-ipcMain.on(example, async (event, arg) => {
-  const msgTemplate = (pingPong: string) => `IPC test: ${pingPong}`;
-  event.reply(example, msgTemplate('pong'));
-});
-ipcMain.on(openDirectoryDialog, async (event, arg) => {
-  console.log(chalk.blue(arg));
-  if (mainWindow) {
-    dialog
-      .showOpenDialog(mainWindow, {
-        properties: ['openFile', 'openDirectory'],
-      })
-      .then((result: { canceled: any; filePaths: any }) => {
-        event.reply(openDirectoryDialog, result.filePaths);
-      })
-      .catch((err: any) => {
-        console.log(err);
-      });
-  }
-});
 /**
  * 渲染进行调用主进程任务 end
  */
@@ -83,7 +59,8 @@ const createWindow = async () => {
   if (isDevelopment) {
     await installExtensions();
   }
-
+  /** 启动ipcRenderer事件监控 */
+  ipcHandler.init();
   const RESOURCES_PATH = app.isPackaged
     ? path.join(process.resourcesPath, 'assets')
     : path.join(__dirname, '../../assets');
@@ -95,8 +72,8 @@ const createWindow = async () => {
   mainWindow = new BrowserWindow({
     frame: false,
     show: false,
-    width: 960,
-    height: 728,
+    width: 1000,
+    height: 800,
     backgroundColor: bgColor,
     titleBarStyle: 'hidden',
     icon: getAssetPath('icon.png'),

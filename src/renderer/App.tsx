@@ -1,9 +1,9 @@
 import { Link, Outlet, Route, Routes } from 'react-router-dom';
-import icon from '../../assets/icon.svg';
+import { useEffect } from 'react';
 import './App.css';
 import 'antd/dist/antd.variable.min.css';
-import { ConfigProvider } from 'antd';
 import {
+  ConfigProvider,
   Typography,
   Avatar,
   Button,
@@ -23,10 +23,7 @@ import {
   PlusSquareOutlined,
   AppstoreOutlined,
 } from '@ant-design/icons';
-import { useEffect } from 'react';
-const { Header, Sider, Content } = Layout;
-const { Text } = Typography;
-
+import icon from '../../assets/icon.svg';
 import LoginPage from './pages/Login';
 import ProjectPage from './pages/Project';
 import RegisterPage from './pages/Login/Register';
@@ -35,6 +32,10 @@ import CustomizePage from './pages/Customize';
 import PlusPage from './pages/Plus';
 import DocsPage from './pages/Docs';
 import TemplatePage from './pages/Template';
+import TemplateDatabase from './dbModel/Template';
+
+const { Header, Sider, Content } = Layout;
+const { Text } = Typography;
 /**
  *
  * @returns
@@ -44,8 +45,38 @@ const App = () => {
    * 潘通2022年流行色
    */
   const bgColor = '#6667AB';
-
   useEffect(() => {
+    // eslint-disable-next-line promise/catch-or-return
+    TemplateDatabase.templates.count().then((count: number) => {
+      // 添加默认模版路径
+      if (count === 0) {
+        TemplateDatabase.templates.add({
+          /** 模版名称 */
+          templateName: 'Springboot_Dubbo_Nacos',
+          /** 项目路径 */
+          templateDir: 'string',
+          /** 作者 */
+          owner: 'Code Faster',
+          /** 语言类型 1、Java 2、JavaScript */
+          type: 1,
+          /** 简介 */
+          description: 'springboot + dubbo + nacos 微服务项目',
+        });
+        TemplateDatabase.templates.add({
+          /** 模版名称 */
+          templateName: 'React_AntDesignPro',
+          /** 项目路径 */
+          templateDir: 'string',
+          /** 作者 */
+          owner: 'Code Faster',
+          /** 语言类型 1、Java 2、JavaScript */
+          type: 2,
+          /** 简介 */
+          description: 'React + AntDesignPro 实现中后台前端开发',
+        });
+      }
+      return count;
+    });
     ConfigProvider.config({
       theme: {
         primaryColor: bgColor,
@@ -55,15 +86,15 @@ const App = () => {
   }, []);
   return (
     <Layout style={{ height: '100%' }}>
-      <Header className={'uDrag'} style={{ height: 48 }}>
+      <Header className="uDrag" style={{ height: 48 }}>
         <Row style={{ height: 48, lineHeight: '48px' }}>
-          <Col span={23}></Col>
+          <Col span={23} />
           <Col span={1}>
             <Space>
               <Tooltip title="发现新版本">
                 <Button
                   type="default"
-                  size={'small'}
+                  size="small"
                   icon={<ArrowUpOutlined />}
                   style={{ boxShadow: 'none' }}
                 />
@@ -71,7 +102,7 @@ const App = () => {
               <Tooltip title="帮助与客服">
                 <Button
                   type="default"
-                  size={'small'}
+                  size="small"
                   icon={<QuestionCircleTwoTone color={bgColor} />}
                   style={{ boxShadow: 'none' }}
                 />
@@ -90,14 +121,11 @@ const App = () => {
               Code Faster
             </Avatar> */}
             <Col style={{ paddingLeft: 20, paddingTop: 5 }}>
-              <Avatar
-                style={{ backgroundColor: '#f56a00' }}
-                src={icon}
-              ></Avatar>
+              <Avatar style={{ backgroundColor: '#f56a00' }} src={icon} />
             </Col>
             <Col style={{ paddingLeft: 15 }}>
               <Text style={{ color: '#fff' }}>Code Faster</Text>
-              <br></br>
+              <br />
               <Text style={{ color: '#ddd', fontSize: 12 }} type="secondary">
                 0.0.1
               </Text>
@@ -105,16 +133,16 @@ const App = () => {
           </Row>
           <Menu defaultSelectedKeys={['1']} mode="inline" theme="dark">
             <Menu.Item key="1" icon={<ProjectOutlined />}>
-              <Link to={`/`}>项目</Link>
+              <Link to="/">项目</Link>
             </Menu.Item>
             <Menu.Item key="2" icon={<ControlOutlined />}>
-              <Link to={`/customize`}>自定义</Link>
+              <Link to="/customize">自定义</Link>
             </Menu.Item>
             <Menu.Item key="3" icon={<PlusSquareOutlined />}>
-              <Link to={`/plus`}>插件市场</Link>
+              <Link to="/plus">插件市场</Link>
             </Menu.Item>
             <Menu.Item key="4" icon={<AppstoreOutlined />}>
-              <Link to={`/template`}>模版市场</Link>
+              <Link to="/template">模版市场</Link>
             </Menu.Item>
             {/*  <Menu.Item key="3" icon={<BugOutlined />}>
               测试
@@ -123,7 +151,7 @@ const App = () => {
               部署
             </Menu.Item> */}
             <Menu.Item key="5" icon={<GithubOutlined />}>
-              <Link to={`/docs`}>学习Code Faster</Link>
+              <Link to="/docs">学习Code Faster</Link>
             </Menu.Item>
           </Menu>
         </Sider>
@@ -138,31 +166,20 @@ const App = () => {
         >
           <Outlet />
           <Routes>
-            <Route path="/" element={<HelloPage />}></Route>
+            <Route path="/" element={<HelloPage />} />
             <Route path="login" element={<LoginPage />}>
               <Route path="register" element={<RegisterPage />} />
             </Route>
             <Route path="project" element={<ProjectPage />} />
-            <Route path="customize" element={<CustomizePage />}></Route>
-            <Route path="plus" element={<PlusPage />}></Route>
-            <Route path="docs" element={<DocsPage />}></Route>
-            <Route path="template" element={<TemplatePage/>}></Route>
-            <Route path="*" element={<NoMatch />} />
+            <Route path="customize" element={<CustomizePage />} />
+            <Route path="plus" element={<PlusPage />} />
+            <Route path="docs" element={<DocsPage />} />
+            <Route path="template" element={<TemplatePage />} />
           </Routes>
         </Content>
       </Layout>
     </Layout>
   );
 };
-function NoMatch() {
-  return (
-    <div>
-      <h2>Error 404!</h2>
-      <p>
-        <Link to="/">返回首页</Link>
-      </p>
-    </div>
-  );
-}
 
 export default App;

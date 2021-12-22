@@ -1,3 +1,5 @@
+/* eslint-disable no-else-return */
+/* eslint-disable promise/always-return */
 import { FolderOpenOutlined, SearchOutlined } from '@ant-design/icons';
 import {
   Avatar,
@@ -6,7 +8,6 @@ import {
   Col,
   Divider,
   Form,
-  FormInstance,
   Input,
   List,
   Modal,
@@ -14,34 +15,58 @@ import {
   Select,
   Space,
 } from 'antd';
+// eslint-disable-next-line import/order
 import styles from './index.module.less';
 import 'antd/dist/antd.variable.min.css';
 import Meta from 'antd/lib/card/Meta';
-import { useRef, useState } from 'react';
-const { Option } = Select;
+import { useEffect, useRef, useState } from 'react';
+import { useLiveQuery } from 'dexie-react-hooks';
+import ProjectDatabase from '../../dbModel/Project';
+import TemplateDatabase from '../../dbModel/Template';
 
+const scopedPackagePattern = new RegExp('^(?:@([^/]+?)[/])?([^/]+?)$');
+const { Option } = Select;
 const HelloPage: React.FC = () => {
   const [createProjectModel, setCreateProjectModel] = useState(false);
   const [formRef] = Form.useForm();
-  const importProject = () => {
-    openDirectoryDialog();
+  const projectList = useLiveQuery(async () => {
+    return ProjectDatabase.projects.toArray();
+  });
+  const importProject = async () => {
+    // eslint-disable-next-line @typescript-eslint/no-use-before-define
+    const url = await openDirectoryDialog();
+    console.log(url);
+    // 判断该目录下是否存在初始化的json,不存在抛出错误
   };
-  const openDirectoryDialog = (): string[] | any => {
-    window.electron.ipcRenderer.execTask(
-      window.electron.task.openDirectoryDialog
+  /**
+   * 选取文件夹
+   * @returns directory url
+   */
+  const openDirectoryDialog = async (): Promise<string[] | any> => {
+    const arg = await window.electron.ipcRenderer.execInvokeTask(
+      window.electron.channel.openDirectoryDialog
     );
-    window.electron.ipcRenderer.once(
-      window.electron.task.openDirectoryDialog,
-      (arg: any) => {
-        formRef.setFieldsValue({
-          url: arg && arg[0],
-        });
-      }
-    );
+    return arg && arg[0];
   };
+
+  /** 根据参数加载模版数据 */
+  const loadTemplate = async (value: string) => {
+    const list = await TemplateDatabase.templates
+      .where('type')
+      .equals(parseInt(value, 10))
+      .toArray();
+    formRef.setFieldsValue({ templateId: '', templateList: list });
+  };
+
   const createProject = () => {
     setCreateProjectModel(true);
+    loadTemplate('1');
+    formRef.resetFields();
   };
+  /**
+   * 新增项目
+   * @returns
+   */
   const CreateProjectModel = () => {
     return (
       <Modal
@@ -50,7 +75,17 @@ const HelloPage: React.FC = () => {
         okText="确认"
         cancelText="取消"
         onOk={() => {
-          setCreateProjectModel(false);
+          formRef
+            .validateFields()
+            .then((values: Project) => {
+              formRef.resetFields();
+              console.log(values);
+              ProjectDatabase.projects.add(values);
+              setCreateProjectModel(false);
+            })
+            .catch((info) => {
+              console.log('Validate Failed:', info);
+            });
         }}
         onCancel={() => {
           setCreateProjectModel(false);
@@ -58,24 +93,85 @@ const HelloPage: React.FC = () => {
       >
         <Form
           layout="vertical"
-          hideRequiredMark
           name="project"
           form={formRef}
-          initialValues={{ url: 'public' }}
+          initialValues={{ type: '1', templateList: [] }}
         >
           <Row gutter={16}>
-            <Col span={12}>
+            <Col span={24}>
               <Form.Item
                 name="projectName"
                 label="项目名称"
-                rules={[{ required: true, message: '请输入项目名称' }]}
+                rules={[
+                  {
+                    required: true,
+                    message: '请输入项目名称',
+                  },
+                  ({ getFieldValue }) => ({
+                    validator(_, name: string) {
+                      if (name === null || name === undefined) {
+                        return Promise.reject(new Error(''));
+                      } else if (name.trim() !== name) {
+                        return Promise.reject(
+                          new Error(
+                            'name cannot contain leading or trailing spaces'
+                          )
+                        );
+                      } else if (name.length > 214) {
+                        return Promise.reject(
+                          new Error(
+                            'name can no longer contain more than 214 characters'
+                          )
+                        );
+                      } else if (name.match(/^\./)) {
+                        return Promise.reject(
+                          new Error('name cannot start with a period')
+                        );
+                      } else if (name.match(/^_/)) {
+                        return Promise.reject(
+                          new Error('name cannot start with an underscore')
+                        );
+                      } else if (
+                        /[~'!()*]/.test(name.split('/').slice(-1)[0])
+                      ) {
+                        return Promise.reject(
+                          new Error(
+                            'name can no longer contain special characters ("~\'!()*")'
+                          )
+                        );
+                      } else if (encodeURIComponent(name) !== name) {
+                        // Maybe it's a scoped package name, like @user/package
+                        const nameMatch = name.match(scopedPackagePattern);
+                        if (nameMatch) {
+                          const user = nameMatch[1];
+                          const pkg = nameMatch[2];
+                          if (
+                            encodeURIComponent(user) === user &&
+                            encodeURIComponent(pkg) === pkg
+                          ) {
+                            return Promise.resolve();
+                          }
+                        }
+                        return Promise.reject(
+                          new Error(
+                            'name can only contain URL-friendly characters'
+                          )
+                        );
+                      } else {
+                        return Promise.resolve();
+                      }
+                    },
+                  }),
+                ]}
               >
                 <Input placeholder="请输入项目名称" />
               </Form.Item>
             </Col>
-            <Col span={12}>
+          </Row>
+          <Row gutter={16}>
+            <Col span={24}>
               <Form.Item
-                name="url"
+                name="projectDir"
                 label="项目路径"
                 rules={[{ required: true, message: '请选择项目文件路径' }]}
               >
@@ -83,15 +179,17 @@ const HelloPage: React.FC = () => {
                   style={{ width: 'calc(100%)' }}
                   placeholder="请选择项目文件路径"
                   addonAfter={
-                    <Form.Item name="suffix" noStyle>
+                    <Form.Item noStyle>
                       <Button
                         type="link"
                         icon={<FolderOpenOutlined />}
                         style={{ height: 24 }}
                         onClick={async () => {
-                          openDirectoryDialog();
+                          formRef.setFieldsValue({
+                            projectDir: await openDirectoryDialog(),
+                          });
                         }}
-                      ></Button>
+                      />
                     </Form.Item>
                   }
                 />
@@ -107,20 +205,69 @@ const HelloPage: React.FC = () => {
               >
                 <Select placeholder="请选择作者">
                   <Option value="Code Faster">Code Faster</Option>
-                  <Option value="Biqi Li">Biqi Li</Option>
                 </Select>
               </Form.Item>
             </Col>
             <Col span={12}>
               <Form.Item
                 name="type"
-                label="项目类型"
-                rules={[{ required: true, message: '请选择项目类型' }]}
+                label="语言类型"
+                rules={[{ required: true, message: '请选择语言类型' }]}
               >
-                <Select placeholder="请选择项目类型">
-                  <Option value="private">私有化</Option>
-                  <Option value="public">公共</Option>
+                <Select placeholder="请选择语言类型" onChange={loadTemplate}>
+                  <Option value="1">Java</Option>
+                  <Option value="2">JavaScript</Option>
+                  <Option value="3" disabled>
+                    NodeJs
+                  </Option>
+                  <Option value="4" disabled>
+                    Go
+                  </Option>
+                  <Option value="5" disabled>
+                    Python
+                  </Option>
                 </Select>
+              </Form.Item>
+            </Col>
+          </Row>
+          <Row gutter={16}>
+            <Col span={24}>
+              <Form.Item
+                noStyle
+                shouldUpdate={(prevValues, curValues) =>
+                  prevValues.templateList !== curValues.templateList
+                }
+              >
+                {({ getFieldValue }) => {
+                  const templateList: Template[] =
+                    getFieldValue('templateList') || [];
+                  return templateList.length ? (
+                    <Form.Item
+                      name="templateId"
+                      label="项目模版"
+                      rules={[{ required: true, message: '请选择项目模版' }]}
+                    >
+                      <Select placeholder="请选择项目类型">
+                        {templateList?.map((template: Template) => (
+                          <Option
+                            key={`${template.id}`}
+                            value={`${template.id}`}
+                          >
+                            {template.templateName}({template.description})
+                          </Option>
+                        ))}
+                      </Select>
+                    </Form.Item>
+                  ) : (
+                    <Form.Item
+                      name="templateId"
+                      label="项目模版"
+                      rules={[{ required: true, message: '请选择项目模版' }]}
+                    >
+                      <Select placeholder="请选择项目类型" />
+                    </Form.Item>
+                  );
+                }}
               </Form.Item>
             </Col>
           </Row>
@@ -145,28 +292,10 @@ const HelloPage: React.FC = () => {
     );
   };
   const getColor = () => {
-    return '#' + Math.floor(Math.random() * 16777215).toString(16);
+    return `#${Math.floor(Math.random() * 16777215).toString(16)}`;
   };
-  const listData = [
-    {
-      title: 'feilang',
-      color: getColor(),
-    },
-    {
-      title: 'zdnf',
-      color: getColor(),
-    },
-    {
-      title: 'restDemo',
-      color: getColor(),
-    },
-    {
-      title: 'RestLogin',
-      color: getColor(),
-    },
-  ];
   return (
-    <div style={{ padding: '20px' }}>
+    <div>
       <CreateProjectModel />
       <Card style={{ width: '100%', marginBottom: 15 }}>
         <Meta
@@ -201,23 +330,33 @@ const HelloPage: React.FC = () => {
       <Divider style={{ margin: 5 }} />
       <List
         itemLayout="horizontal"
-        dataSource={listData}
-        renderItem={(item) => (
-          <List.Item className={styles.listItemHover}>
+        dataSource={projectList}
+        renderItem={(item: Project) => (
+          <List.Item
+            className={styles.listItemHover}
+            actions={[
+              <Button type="link" key={`${item.id}-edit`}>
+                编辑
+              </Button>,
+              <Button type="link" key={`${item.id}-delate`}>
+                删除
+              </Button>,
+            ]}
+          >
             <List.Item.Meta
               avatar={
                 <Avatar
                   style={{
-                    backgroundColor: item.color,
+                    backgroundColor: getColor(),
                     verticalAlign: 'middle',
                   }}
                   size="large"
                 >
-                  {item.title.substring(0, 1).toLocaleUpperCase()}
+                  {item.projectName?.substring(0, 1).toLocaleUpperCase()}
                 </Avatar>
               }
-              title={item.title}
-              description="~/Desktop/git/flJava/feilang"
+              title={item.projectName}
+              description={item.projectDir}
             />
           </List.Item>
         )}
