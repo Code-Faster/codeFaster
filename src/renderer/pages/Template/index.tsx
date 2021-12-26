@@ -3,9 +3,10 @@ import { Avatar, Col, Divider, Input, List, Radio, Row, Tabs } from 'antd';
 // eslint-disable-next-line import/order
 import styles from './index.module.less';
 import 'antd/dist/antd.variable.min.css';
-import TemplateDatabase from '../../dbModel/Template';
+import TemplateDatabase from '../../dbModel';
 // eslint-disable-next-line import/order
 import { useLiveQuery } from 'dexie-react-hooks';
+import DescriptionItem from '../../components/Description';
 
 const { TabPane } = Tabs;
 const TemplatePage: React.FC = () => {
@@ -15,13 +16,6 @@ const TemplatePage: React.FC = () => {
   const getColor = () => {
     return `#${Math.floor(Math.random() * 16777215).toString(16)}`;
   };
-  // eslint-disable-next-line react/prop-types
-  const DescriptionItem = ({ title, content }) => (
-    <div className="site-description-item-profile-wrapper">
-      <p className="site-description-item-profile-p-label">{title}:</p>
-      {content}
-    </div>
-  );
   return (
     <div>
       <Tabs type="card">
@@ -74,6 +68,7 @@ const TemplatePage: React.FC = () => {
               <Row>
                 <Col span={24}>
                   <DescriptionItem
+                    type="vertical"
                     title="Skills"
                     content="C / C + +, data structures, software engineering, operating systems, computer networks, databases, compiler theory, computer architecture, Microcomputer Principle and Interface Technology, Computer English, Java, ASP, etc."
                   />
@@ -132,10 +127,15 @@ const TemplatePage: React.FC = () => {
               <p className="site-description-item-profile-p">Personal</p>
               <Row>
                 <Col span={12}>
-                  <DescriptionItem title="Full Name" content="Lily" />
+                  <DescriptionItem
+                    type="vertical"
+                    title="Full Name"
+                    content="Lily"
+                  />
                 </Col>
                 <Col span={12}>
                   <DescriptionItem
+                    type="vertical"
                     title="Account"
                     content="AntDesign@example.com"
                   />

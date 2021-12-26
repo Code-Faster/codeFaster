@@ -1,3 +1,4 @@
+/* eslint-disable no-console */
 /* eslint-disable no-else-return */
 /* eslint-disable promise/always-return */
 import { FolderOpenOutlined, SearchOutlined } from '@ant-design/icons';
@@ -19,39 +20,33 @@ import {
 import styles from './index.module.less';
 import 'antd/dist/antd.variable.min.css';
 import Meta from 'antd/lib/card/Meta';
-import { useEffect, useRef, useState } from 'react';
+import { useState } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
-import ProjectDatabase from '../../dbModel/Project';
-import TemplateDatabase from '../../dbModel/Template';
+import { Link } from 'react-router-dom';
+import db from '../../dbModel';
+import MainOpts from '../../util/mainOpts';
 
 const scopedPackagePattern = new RegExp('^(?:@([^/]+?)[/])?([^/]+?)$');
 const { Option } = Select;
 const HelloPage: React.FC = () => {
-  const [createProjectModel, setCreateProjectModel] = useState(false);
+  const [createProjectModal, setCreateProjectModal] = useState(false);
   const [formRef] = Form.useForm();
   const projectList = useLiveQuery(async () => {
-    return ProjectDatabase.projects.toArray();
+    return db.projects.toArray();
   });
   const importProject = async () => {
     // eslint-disable-next-line @typescript-eslint/no-use-before-define
-    const url = await openDirectoryDialog();
-    console.log(url);
+    const url = await MainOpts.openDirectoryDialog();
+    db.projects.add({
+      projectDir: url,
+      projectName: url,
+    });
     // 判断该目录下是否存在初始化的json,不存在抛出错误
-  };
-  /**
-   * 选取文件夹
-   * @returns directory url
-   */
-  const openDirectoryDialog = async (): Promise<string[] | any> => {
-    const arg = await window.electron.ipcRenderer.execInvokeTask(
-      window.electron.channel.openDirectoryDialog
-    );
-    return arg && arg[0];
   };
 
   /** 根据参数加载模版数据 */
   const loadTemplate = async (value: string) => {
-    const list = await TemplateDatabase.templates
+    const list = await db.templates
       .where('type')
       .equals(parseInt(value, 10))
       .toArray();
@@ -59,7 +54,7 @@ const HelloPage: React.FC = () => {
   };
 
   const createProject = () => {
-    setCreateProjectModel(true);
+    setCreateProjectModal(true);
     loadTemplate('1');
     formRef.resetFields();
   };
@@ -67,11 +62,11 @@ const HelloPage: React.FC = () => {
    * 新增项目
    * @returns
    */
-  const CreateProjectModel = () => {
+  const CreateProjectModal = () => {
     return (
       <Modal
         title="新建项目"
-        visible={createProjectModel}
+        visible={createProjectModal}
         okText="确认"
         cancelText="取消"
         onOk={() => {
@@ -80,15 +75,15 @@ const HelloPage: React.FC = () => {
             .then((values: Project) => {
               formRef.resetFields();
               console.log(values);
-              ProjectDatabase.projects.add(values);
-              setCreateProjectModel(false);
+              db.projects.add(values);
+              setCreateProjectModal(false);
             })
             .catch((info) => {
               console.log('Validate Failed:', info);
             });
         }}
         onCancel={() => {
-          setCreateProjectModel(false);
+          setCreateProjectModal(false);
         }}
       >
         <Form
@@ -107,7 +102,7 @@ const HelloPage: React.FC = () => {
                     required: true,
                     message: '请输入项目名称',
                   },
-                  ({ getFieldValue }) => ({
+                  () => ({
                     validator(_, name: string) {
                       if (name === null || name === undefined) {
                         return Promise.reject(new Error(''));
@@ -186,7 +181,7 @@ const HelloPage: React.FC = () => {
                         style={{ height: 24 }}
                         onClick={async () => {
                           formRef.setFieldsValue({
-                            projectDir: await openDirectoryDialog(),
+                            projectDir: await MainOpts.openDirectoryDialog(),
                           });
                         }}
                       />
@@ -296,7 +291,7 @@ const HelloPage: React.FC = () => {
   };
   return (
     <div>
-      <CreateProjectModel />
+      <CreateProjectModal />
       <Card style={{ width: '100%', marginBottom: 15 }}>
         <Meta
           avatar={<Avatar src="https://joeschmoe.io/api/v1/random" />}
@@ -335,10 +330,22 @@ const HelloPage: React.FC = () => {
           <List.Item
             className={styles.listItemHover}
             actions={[
-              <Button type="link" key={`${item.id}-edit`}>
-                编辑
-              </Button>,
-              <Button type="link" key={`${item.id}-delate`}>
+              <Link
+                type="link"
+                key={`${item.id}-detail`}
+                to={`/project/${item.id}`}
+              >
+                查看
+              </Link>,
+              <Button
+                type="link"
+                key={`${item.id}-delate`}
+                onClick={() => {
+                  if (item.id) {
+                    db.projects.where('id').equals(item.id).delete();
+                  }
+                }}
+              >
                 删除
               </Button>,
             ]}

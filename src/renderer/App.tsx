@@ -32,7 +32,7 @@ import CustomizePage from './pages/Customize';
 import PlusPage from './pages/Plus';
 import DocsPage from './pages/Docs';
 import TemplatePage from './pages/Template';
-import TemplateDatabase from './dbModel/Template';
+import db from './dbModel';
 
 const { Header, Sider, Content } = Layout;
 const { Text } = Typography;
@@ -47,10 +47,10 @@ const App = () => {
   const bgColor = '#6667AB';
   useEffect(() => {
     // eslint-disable-next-line promise/catch-or-return
-    TemplateDatabase.templates.count().then((count: number) => {
+    db.templates.count().then((count: number) => {
       // 添加默认模版路径
       if (count === 0) {
-        TemplateDatabase.templates.add({
+        db.templates.add({
           /** 模版名称 */
           templateName: 'Springboot_Dubbo_Nacos',
           /** 项目路径 */
@@ -62,7 +62,7 @@ const App = () => {
           /** 简介 */
           description: 'springboot + dubbo + nacos 微服务项目',
         });
-        TemplateDatabase.templates.add({
+        db.templates.add({
           /** 模版名称 */
           templateName: 'React_AntDesignPro',
           /** 项目路径 */
@@ -86,87 +86,90 @@ const App = () => {
   }, []);
   return (
     <Layout style={{ height: '100%' }}>
-      <Header className="uDrag" style={{ height: 48 }}>
-        <Row style={{ height: 48, lineHeight: '48px' }}>
-          <Col span={23} />
-          <Col span={1}>
-            <Space>
-              <Tooltip title="发现新版本">
-                <Button
-                  type="default"
-                  size="small"
-                  icon={<ArrowUpOutlined />}
-                  style={{ boxShadow: 'none' }}
-                />
-              </Tooltip>
-              <Tooltip title="帮助与客服">
-                <Button
-                  type="default"
-                  size="small"
-                  icon={<QuestionCircleTwoTone color={bgColor} />}
-                  style={{ boxShadow: 'none' }}
-                />
-              </Tooltip>
-            </Space>
-          </Col>
-        </Row>
-      </Header>
-      <Layout>
-        <Sider>
-          <Row style={{ padding: '5px 0' }}>
-            {/* <Avatar
+      <Sider>
+        <Row style={{ padding: '50px 0 5px' }}>
+          {/* <Avatar
               style={{ backgroundColor: '#f56a00', verticalAlign: 'middle' }}
               size="large"
             >
               Code Faster
             </Avatar> */}
-            <Col style={{ paddingLeft: 20, paddingTop: 5 }}>
-              <Avatar style={{ backgroundColor: '#f56a00' }} src={icon} />
-            </Col>
-            <Col style={{ paddingLeft: 15 }}>
-              <Text style={{ color: '#fff' }}>Code Faster</Text>
-              <br />
-              <Text style={{ color: '#ddd', fontSize: 12 }} type="secondary">
-                0.0.1
-              </Text>
-            </Col>
-          </Row>
-          <Menu defaultSelectedKeys={['1']} mode="inline" theme="dark">
-            <Menu.Item key="1" icon={<ProjectOutlined />}>
-              <Link to="/">项目</Link>
-            </Menu.Item>
-            <Menu.Item key="2" icon={<ControlOutlined />}>
-              <Link to="/customize">自定义</Link>
-            </Menu.Item>
-            <Menu.Item key="3" icon={<PlusSquareOutlined />}>
-              <Link to="/plus">插件市场</Link>
-            </Menu.Item>
-            <Menu.Item key="4" icon={<AppstoreOutlined />}>
-              <Link to="/template">模版市场</Link>
-            </Menu.Item>
-            {/*  <Menu.Item key="3" icon={<BugOutlined />}>
+          <Col style={{ paddingLeft: 20, paddingTop: 5 }}>
+            <Avatar style={{ backgroundColor: '#f56a00' }} src={icon} />
+          </Col>
+          <Col style={{ paddingLeft: 15 }}>
+            <Text style={{ color: '#fff' }}>Code Faster</Text>
+            <br />
+            <Text style={{ color: '#ddd', fontSize: 12 }} type="secondary">
+              0.0.1
+            </Text>
+          </Col>
+        </Row>
+        <Menu defaultSelectedKeys={['1']} mode="inline" theme="dark">
+          <Menu.Item key="1" icon={<ProjectOutlined />}>
+            <Link to="/">项目</Link>
+          </Menu.Item>
+          <Menu.Item key="2" icon={<ControlOutlined />}>
+            <Link to="/customize">自定义</Link>
+          </Menu.Item>
+          <Menu.Item key="3" icon={<PlusSquareOutlined />}>
+            <Link to="/plus">插件市场</Link>
+          </Menu.Item>
+          <Menu.Item key="4" icon={<AppstoreOutlined />}>
+            <Link to="/template">模版市场</Link>
+          </Menu.Item>
+          {/*  <Menu.Item key="3" icon={<BugOutlined />}>
               测试
             </Menu.Item>
             <Menu.Item key="4" icon={<CloudUploadOutlined />}>
               部署
             </Menu.Item> */}
-            <Menu.Item key="5" icon={<GithubOutlined />}>
-              <Link to="/docs">学习Code Faster</Link>
-            </Menu.Item>
-          </Menu>
-        </Sider>
+          <Menu.Item key="5" icon={<GithubOutlined />}>
+            <Link to="/docs">学习Code Faster</Link>
+          </Menu.Item>
+        </Menu>
+      </Sider>
+      <Layout>
+        <Header className="uDrag" style={{ height: 48 }}>
+          <Row style={{ height: 48, lineHeight: '48px' }}>
+            <Col span={23} />
+            <Col span={1}>
+              <Space>
+                <Tooltip title="发现新版本">
+                  <Button
+                    type="default"
+                    size="small"
+                    icon={<ArrowUpOutlined />}
+                    style={{ boxShadow: 'none' }}
+                  />
+                </Tooltip>
+                <Tooltip title="帮助与客服">
+                  <Button
+                    type="default"
+                    size="small"
+                    icon={<QuestionCircleTwoTone color={bgColor} />}
+                    style={{ boxShadow: 'none' }}
+                  />
+                </Tooltip>
+              </Space>
+            </Col>
+          </Row>
+        </Header>
         <Content
           style={{
-            borderTopLeftRadius: '8px',
             background: '#fff',
-            overflow: 'hidden',
-            padding: '8px',
+            overflowY: 'auto',
+            padding: '12px',
             boxSizing: 'border-box',
           }}
         >
           <Outlet />
           <Routes>
             <Route path="/" element={<HelloPage />} />
+            <Route path="project">
+              <Route path=":projectId" element={<ProjectPage />} />
+              {/* <Route index element={<ProjectPage />} /> */}
+            </Route>
             <Route path="login" element={<LoginPage />}>
               <Route path="register" element={<RegisterPage />} />
             </Route>

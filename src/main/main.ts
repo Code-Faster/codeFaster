@@ -11,7 +11,7 @@
 import 'core-js/stable';
 import 'regenerator-runtime/runtime';
 import path from 'path';
-import { app, BrowserWindow, shell, ipcMain, dialog } from 'electron';
+import { app, BrowserWindow, shell } from 'electron';
 import { autoUpdater } from 'electron-updater';
 import log from 'electron-log';
 import MenuBuilder from './menu';
@@ -59,8 +59,6 @@ const createWindow = async () => {
   if (isDevelopment) {
     await installExtensions();
   }
-  /** 启动ipcRenderer事件监控 */
-  ipcHandler.init();
   const RESOURCES_PATH = app.isPackaged
     ? path.join(process.resourcesPath, 'assets')
     : path.join(__dirname, '../../assets');
@@ -81,6 +79,9 @@ const createWindow = async () => {
       preload: path.join(__dirname, 'preload.js'),
     },
   });
+
+  /** 启动ipcRenderer事件监控 */
+  ipcHandler.init(mainWindow);
   // console.log(chalk.yellow('packageJson is ') + JSON.stringify(packageJson));
   /**
    * 设置应用about
