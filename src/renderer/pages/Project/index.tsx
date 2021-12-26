@@ -6,6 +6,7 @@ import {
   UserOutlined,
 } from '@ant-design/icons';
 import {
+  Alert,
   Button,
   Card,
   Col,
@@ -13,9 +14,9 @@ import {
   Form,
   Input,
   InputNumber,
+  message,
   Modal,
   Row,
-  Select,
   Space,
   Table,
   Tabs,
@@ -39,17 +40,13 @@ const ProjectPage: React.FC = () => {
     description: '',
   });
   const [sqlConnections, setSqlConnections] = useState<SqlConnection[]>([]);
-  const [selectedSqlConnections, setSelectedSqlConnections] =
-    useState<SqlConnection>();
   const [selectedRowKeys, setSelectedRowKeys] = useState<React.Key[]>([]);
+  const [tableArr, setTableArr] = useState<[]>([]);
   const [sqlList, setSqlList] = useState<[]>([]);
   const [createSqlModal, setCreateSqlModal] = useState<boolean>(false);
   const params = useParams();
   const [modelForm] = Form.useForm();
   const [sqlForm] = Form.useForm();
-  const onSelectChange = (selectedKeys: React.Key[]) => {
-    setSelectedRowKeys(selectedKeys);
-  };
 
   /**
    * 查询数据库连接
@@ -66,6 +63,11 @@ const ProjectPage: React.FC = () => {
       .catch((e) => {
         console.error(e.stack || e);
       });
+  };
+
+  const onSelectChange = (_selectedKeys: React.Key[], selectedRows: any) => {
+    setSelectedRowKeys(_selectedKeys);
+    setTableArr(selectedRows);
   };
   const rowSelection: TableRowSelection<any> = {
     selectedRowKeys,
@@ -258,9 +260,15 @@ const ProjectPage: React.FC = () => {
         <TabPane tab="模型生成" key="1">
           <Form
             layout="vertical"
-            name="project"
+            name="model"
             form={modelForm}
-            initialValues={{ type: '1', templateList: [] }}
+            onFinish={(values: Model) => {
+              if (tableArr.length === 0) {
+                message.error({ content: '请至少选择一个表！' });
+              }
+              values.tableArr = tableArr;
+              MainOpts.createModel(values, project);
+            }}
           >
             <Row gutter={16}>
               <Col span={12}>
@@ -299,7 +307,6 @@ const ProjectPage: React.FC = () => {
                                     .delete()
                                     .then((deleteCount) => {
                                       queryAllSqlConnections();
-                                      setSelectedSqlConnections(undefined);
                                       return deleteCount;
                                     })
                                     // eslint-disable-next-line @typescript-eslint/no-shadow
@@ -317,7 +324,6 @@ const ProjectPage: React.FC = () => {
                             const json = await DbOpts.createMysqlConnection(
                               sqlConnections[index]
                             );
-                            console.log(json);
                             setSqlList(json);
                           }}
                         >
@@ -325,7 +331,7 @@ const ProjectPage: React.FC = () => {
                             title={() => {
                               return <UserOutlined />;
                             }}
-                            content={ele.user}
+                            content={`${ele.user} / ${ele.database}`}
                           />
                           <DescriptionItem
                             title={() => {
@@ -341,9 +347,13 @@ const ProjectPage: React.FC = () => {
                 </Form.Item>
               </Col>
             </Row>
-
             <Row gutter={16}>
               <Col span={24}>
+                <Alert
+                  message="SQL格式"
+                  description="建议数据库所有命名以‘_’区分，例如格式 : T_DB_NAME T_TABLE_NAME cloum_name ; 注释请勿使用'，'或者'；'."
+                  type="info"
+                />
                 <Table
                   rowSelection={rowSelection}
                   rowKey={(record) => record.tableName}
@@ -365,7 +375,7 @@ const ProjectPage: React.FC = () => {
             <Row gutter={16}>
               <Col span={24}>
                 <Form.Item
-                  name="pojoDir"
+                  name="buildPath"
                   label="目标POJO地址"
                   rules={[
                     {
@@ -385,7 +395,7 @@ const ProjectPage: React.FC = () => {
                           style={{ height: 24 }}
                           onClick={async () => {
                             modelForm.setFieldsValue({
-                              pojoDir: await MainOpts.openDirectoryDialog(),
+                              buildPath: await MainOpts.openDirectoryDialog(),
                             });
                           }}
                         />
@@ -398,7 +408,7 @@ const ProjectPage: React.FC = () => {
             <Row gutter={16}>
               <Col span={24}>
                 <Form.Item
-                  name="voDir"
+                  name="buildPathVo"
                   label="目标VO地址"
                   rules={[{ required: true, message: '请选择目标VO地址' }]}
                 >
@@ -413,7 +423,7 @@ const ProjectPage: React.FC = () => {
                           style={{ height: 24 }}
                           onClick={async () => {
                             modelForm.setFieldsValue({
-                              voDir: await MainOpts.openDirectoryDialog(),
+                              buildPathVo: await MainOpts.openDirectoryDialog(),
                             });
                           }}
                         />
@@ -428,9 +438,19 @@ const ProjectPage: React.FC = () => {
               wrapperCol={{ offset: 9, span: 6 }}
               style={{ paddingTop: 16 }}
             >
-              <Button type="primary" htmlType="submit" block>
-                立即生成模型
-              </Button>
+              <Space>
+                <Button type="primary" htmlType="submit">
+                  立即生成模型
+                </Button>
+                <Button
+                  htmlType="button"
+                  onClick={() => {
+                    modelForm.resetFields();
+                  }}
+                >
+                  重置
+                </Button>
+              </Space>
             </Form.Item>
           </Form>
         </TabPane>

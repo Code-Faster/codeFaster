@@ -71,3 +71,21 @@ type FileParams = {
   fileName: string;
   fileType: string;
 };
+/**
+ * 模型生成器
+ */
+type Model = {
+  tableArr: [];
+  buildPath: string;
+  buildPathVo: string;
+};
+
+type FileObj = {
+  fileName: string;
+  path: string;
+  fromPath?: string;
+  formData?: Model;
+  // false 文件 true 文件夹
+  isDir: boolean;
+  children: Array<FileObj>;
+};

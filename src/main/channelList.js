@@ -8,10 +8,13 @@ const readFile = 'readFile';
 const downloadFile = 'downloadFile';
 /** 初始化myql */
 const initMysql = 'initMysql';
+/** 模版生成pojo */
+const createModel = 'createModel';
 module.exports = {
   openDirectoryDialog,
   example,
   readFile,
   downloadFile,
   initMysql,
+  createModel,
 };

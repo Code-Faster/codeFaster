@@ -8,8 +8,10 @@ import {
   readFile,
   downloadFile,
   initMysql,
+  createModel,
 } from './channelList';
 import MysqlOpt from './mysql';
+import Template from './template';
 
 const fileReader = (filePath: string): string => {
   const stats = fs.statSync(filePath);
@@ -77,10 +79,11 @@ export default class ipcHandler {
       const msgTemplate = (pingPong: string) => `IPC test: ${pingPong}`;
       event.reply(example, msgTemplate('pong'));
     });
-    ipcMain.handle(openDirectoryDialog, async (_event, _arg) => {
+    ipcMain.handle(openDirectoryDialog, async () => {
       const result = await dialog.showOpenDialogSync({
         properties: ['openDirectory'],
       });
+      console.log(result);
       return result;
     });
     /**
@@ -101,6 +104,16 @@ export default class ipcHandler {
         const c = new MysqlOpt(args);
         const result = await c.query(sqlStr);
         return result;
+      }
+    );
+    /**
+     * 生成pojo模型
+     */
+    ipcMain.handle(
+      createModel,
+      async (_event, model: Model, project: Project) => {
+        const template = new Template(project);
+        return template.generatorPOJO(model);
       }
     );
   }

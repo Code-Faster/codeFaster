@@ -5,6 +5,7 @@ const {
   readFile,
   downloadFile,
   initMysql,
+  createModel,
 } = require('./channelList');
 
 contextBridge.exposeInMainWorld('electron', {
@@ -53,5 +54,6 @@ contextBridge.exposeInMainWorld('electron', {
     readFile,
     downloadFile,
     initMysql,
+    createModel,
   },
 });
