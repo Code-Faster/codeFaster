@@ -2,7 +2,7 @@ import path from 'path';
 import fs from 'fs';
 
 const JAVA_SUFFIX = '.java';
-const TEMPLATE_JSON = 'solve.996.json';
+const TEMPLATE_JSON = 'code-faster.json';
 const EXCLUDE_PATH = [
   'node_modules',
   'target',
@@ -29,8 +29,8 @@ const tranformHumpStr = (str: string, type = true): string => {
     return '';
   }
   if (str.indexOf('_') >= 0) {
-    const strArr = str.split('_');
-    strArr.map((ele) => {
+    let strArr = str.split('_');
+    strArr = strArr.map((ele) => {
       return ele.charAt(0).toUpperCase() + ele.substring(1).toLowerCase();
     });
     const result = strArr.join('');
@@ -62,22 +62,152 @@ const getPackageName = (filePath: string, startFix: string) => {
  * 模版生成类
  */
 export default class Template {
+  private project: Project = {
+    owner: '',
+    templateId: 0,
+    templateDir: '',
+    projectDir: '',
+    projectName: '',
+    type: 1,
+    description: '',
+  };
+
   private keyPathArr: Array<any> = [];
 
   // 项目最终路径
   private projectPath: string = '';
 
-  // 模版真实地址
-  private templatePath: string = '';
-
   // 静态目录模版目录名
   private templateModelName: string = 'createTemplate';
 
-  constructor(project: Project) {
+  constructor(pj: Project) {
+    this.project = pj;
     this.keyPathArr = [];
-    this.projectPath = path.join(
-      `${project.projectDir}/${project.projectName}`
+    this.projectPath = path.join(pj.projectDir, pj.projectName);
+    console.log(this.projectPath);
+  }
+
+  /** 执行初始化  */
+  public init() {
+    // 1、获取目录结构
+    const structure = this.showStructure(this.project);
+    // 2、生成结构目录文件
+    this.getStructure(
+      structure,
+      structure.fileName,
+      this.project.projectName,
+      this.project.projectDir
     );
+    // 3、将模版修改后输出到产出目录
+    this.copyCoding(structure);
+    // 4、将生成的目录文件copy到输出目录项目下
+    fs.writeFileSync(
+      path.join(
+        path.join(this.project.projectDir, this.project.projectName),
+        TEMPLATE_JSON
+      ),
+      JSON.stringify(structure)
+    );
+  }
+
+  /**
+   * 替换目录结构参数
+   * @param structure
+   * @param formProjectName
+   * @param projectName
+   * @param buildPath
+   */
+  getStructure(
+    structure: FileObj,
+    formProjectName: string,
+    projectName: string,
+    buildPath: string
+  ) {
+    structure.fileName = structure.fileName.replaceAll(
+      formProjectName,
+      projectName
+    );
+    // 处理window 系统 路径\\
+    if (structure.path.indexOf('\\') >= 0) {
+      structure.path = structure.path
+        .replaceAll(
+          this.project.templateDir
+            .substring(0, this.project.templateDir.lastIndexOf('\\'))
+            .replaceAll('\\\\', '\\\\'),
+          buildPath
+        )
+        .replaceAll(formProjectName, projectName);
+    } else if (structure.path.indexOf('/') >= 0) {
+      structure.path = structure.path
+        .replaceAll(
+          this.project.templateDir.substr(
+            0,
+            this.project.templateDir.lastIndexOf('/')
+          ),
+          buildPath
+        )
+        .replaceAll(formProjectName, projectName);
+    }
+    if (structure.children.length > 0) {
+      structure.children.forEach((obj: any) => {
+        if (obj.path.indexOf('\\') >= 0) {
+          obj.path = obj.path
+            .replaceAll(
+              this.project.templateDir
+                .substring(0, this.project.templateDir.lastIndexOf('\\'))
+                .replaceAll('\\\\', '\\\\'),
+              buildPath
+            )
+            .replaceAll(formProjectName, projectName);
+        } else if (obj.path.indexOf('/') >= 0) {
+          obj.path = obj.path
+            .replaceAll(
+              this.project.templateDir.substring(
+                0,
+                this.project.templateDir.lastIndexOf('/')
+              ),
+              buildPath
+            )
+            .replaceAll(formProjectName, projectName);
+        }
+        this.getStructure(obj, formProjectName, projectName, buildPath);
+      });
+    }
+  }
+
+  /**
+   * 拷贝模版代码，复制模版代码，内部做关键字替换
+   * @param structure
+   */
+  copyCoding(structure: FileObj) {
+    if (!fs.existsSync(structure.path)) {
+      fs.mkdirSync(structure.path);
+    }
+    if (structure.isDir) {
+      if (structure.children.length > 0) {
+        // 如果是文件夹
+        structure.children.forEach((obj: FileObj) => {
+          // 如果子目录是dir
+          if (obj.isDir) this.copyCoding(obj);
+          else {
+            const data = fs.readFileSync(obj.fromPath || '', 'utf8');
+            const result = data.replace(
+              new RegExp(this.templateModelName, 'g'),
+              this.project.projectName
+            );
+            fs.writeFileSync(obj.path, result, 'utf8');
+          }
+        });
+      }
+    } else {
+      // 如果不是文件夹
+      const data = fs.readFileSync(structure.fromPath || '', 'utf8');
+      const result = data.replace(
+        new RegExp(this.templateModelName, 'g'),
+        this.project.projectName
+      );
+      fs.writeFileSync(structure.path, result, 'utf8');
+    }
   }
 
   /**
@@ -162,7 +292,7 @@ export default class Template {
         // 重新生成
         jsonData.path = path.parse(dirPath).dir;
         if (jsonData.formData && jsonData.formData !== undefined) {
-          // build_path 去除项目名称
+          // buildPath 去除项目名称
           const arr = path.parse(dirPath).dir.split(path.sep);
           arr.pop();
           jsonData.formData.buildPath = arr.join(path.sep);
@@ -245,8 +375,8 @@ export default class Template {
   showStructure(formData: any, obj?: any): FileObj {
     const dirStructure: FileObj = {
       fileName: obj ? obj.fileName : this.templateModelName,
-      path: obj ? obj.path : this.templatePath,
-      fromPath: obj ? obj.path : this.templatePath,
+      path: obj ? obj.path : this.project.templateDir,
+      fromPath: obj ? obj.path : this.project.templateDir,
       formData,
       isDir: true,
       children: [],
@@ -255,6 +385,10 @@ export default class Template {
     return dirStructure;
   }
 
+  /**
+   * 生成pojo 与 vo
+   * @param formData 模型属性
+   */
   generatorPOJO(formData: Model) {
     // 解析sql文件
     const { tableArr } = formData;

@@ -153,6 +153,7 @@
     "@teamsupercell/typings-for-css-modules-loader": "^2.5.1",
     "@testing-library/jest-dom": "^5.14.1",
     "@testing-library/react": "^12.1.2",
+    "@types/cross-spawn": "^6.0.2",
     "@types/enzyme": "^3.10.10",
     "@types/enzyme-adapter-react-16": "^1.0.6",
     "@types/history": "4.7.9",
@@ -227,7 +228,7 @@
   "dependencies": {
     "@ant-design/icons": "^4.7.0",
     "antd": "^4.17.3",
-    "code-faster-code-generator": "^0.0.8",
+    "cross-spawn": "^7.0.3",
     "dexie": "^3.2.0",
     "dexie-react-hooks": "^1.1.1",
     "electron-debug": "^3.2.0",

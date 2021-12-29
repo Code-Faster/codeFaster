@@ -1,7 +1,9 @@
 /* eslint-disable @typescript-eslint/no-shadow */
+import { spawn } from 'cross-spawn';
 import { app, BrowserWindow, dialog, ipcMain, shell } from 'electron';
 import fs from 'fs';
 import path from 'path';
+import chalk from 'chalk';
 import {
   openDirectoryDialog,
   example,
@@ -9,9 +11,14 @@ import {
   downloadFile,
   initMysql,
   createModel,
+  initProject,
+  execCommand,
 } from './channelList';
 import MysqlOpt from './mysql';
 import Template from './template';
+
+/** 模版地址 */
+const playgroundPath = path.resolve(process.cwd(), 'playground');
 
 const fileReader = (filePath: string): string => {
   const stats = fs.statSync(filePath);
@@ -70,6 +77,50 @@ const downloadFileToFolder = (
   );
 };
 /**
+ *
+ * @param cmd install / update /remove
+ * @param modules []
+ * @param templateSourcePath
+ * @returns
+ */
+const execCommandAction = (
+  cmd: string,
+  modules: string[],
+  templateSourcePath: string
+): Promise<any> => {
+  return new Promise((resolve: any, reject: any): void => {
+    // spawn的命令行参数是以数组形式传入
+    // 此处将命令和要安装的插件以数组的形式拼接起来
+    // 此处的cmd指的是执行的命令，比如install\uninstall\update
+    const args = [cmd]
+      .concat(modules)
+      .concat('--color=always')
+      .concat('--save');
+    const npm = spawn('npm', args, { cwd: templateSourcePath }); // 执行npm，并通过 cwd指定执行的路径——配置文件所在文件夹
+    let output = '';
+    npm.stdout
+      .on('data', (data: string) => {
+        output += data; // 获取输出日志
+      })
+      .pipe(process.stdout);
+
+    npm.stderr
+      .on('data', (data: string) => {
+        output += data; // 获取报错日志
+      })
+      .pipe(process.stderr);
+
+    npm.on('close', (code: number) => {
+      if (!code) {
+        resolve({ code: 0, data: output }); // 如果没有报错就输出正常日志
+      } else {
+        // eslint-disable-next-line prefer-promise-reject-errors
+        reject({ code, data: output }); // 如果报错就输出报错日志
+      }
+    });
+  });
+};
+/**
  * 与preload.js 事件相对应
  */
 // eslint-disable-next-line @typescript-eslint/naming-convention
@@ -83,7 +134,6 @@ export default class ipcHandler {
       const result = await dialog.showOpenDialogSync({
         properties: ['openDirectory'],
       });
-      console.log(result);
       return result;
     });
     /**
@@ -107,6 +157,13 @@ export default class ipcHandler {
       }
     );
     /**
+     * 初始化项目
+     */
+    ipcMain.handle(initProject, async (_event, project: Project) => {
+      const template = new Template(project);
+      return template.init();
+    });
+    /**
      * 生成pojo模型
      */
     ipcMain.handle(
@@ -114,6 +171,16 @@ export default class ipcHandler {
       async (_event, model: Model, project: Project) => {
         const template = new Template(project);
         return template.generatorPOJO(model);
+      }
+    );
+    /**
+     * 执行npm命令
+     */
+    ipcMain.handle(
+      execCommand,
+      async (_event, cmd: string, modules: string[]) => {
+        console.log(chalk.red(`__dirname == ${__dirname}`));
+        return execCommandAction(cmd, modules, playgroundPath);
       }
     );
   }

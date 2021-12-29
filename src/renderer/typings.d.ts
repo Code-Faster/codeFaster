@@ -6,6 +6,9 @@ declare module '*.module.less' {
   const classes: { [key: string]: string };
   export default classes;
 }
+interface PreloadUtil {
+  getElectron: () => any;
+}
 
 interface Window {
   electron: { [key: string]: any };
@@ -15,7 +18,7 @@ interface Window {
 interface Project {
   id?: number;
   /** 项目名称 */
-  projectName?: string;
+  projectName: string;
   /** 项目路径 */
   projectDir: string;
   /** 作者 */
@@ -26,11 +29,15 @@ interface Project {
   description?: string;
   /** 项目模版 */
   templateId?: number;
+  /** 模版ID对应的物理地址 */
+  templateDir: string;
 }
 
 /** 模版表 */
 interface Template {
   id?: number;
+  /** 模版下载地址 */
+  url: string;
   /** 模版名称 */
   templateName: string;
   /** 项目路径 */
@@ -89,3 +96,70 @@ type FileObj = {
   isDir: boolean;
   children: Array<FileObj>;
 };
+
+declare namespace Npm {
+  export interface Links {
+    npm: string;
+    homepage: string;
+    repository: string;
+    bugs: string;
+  }
+
+  export interface Author {
+    name: string;
+    email: string;
+    username: string;
+  }
+
+  export interface Publisher {
+    username: string;
+    email: string;
+  }
+
+  export interface Maintainer {
+    username: string;
+    email: string;
+  }
+
+  export interface Package {
+    name: string;
+    scope: string;
+    version: string;
+    description: string;
+    keywords: string[];
+    date: Date;
+    links: Links;
+    author: Author;
+    publisher: Publisher;
+    maintainers: Maintainer[];
+    hasInstall: boolean;
+  }
+
+  export interface Flags {
+    unstable: boolean;
+  }
+
+  export interface Detail {
+    quality: number;
+    popularity: number;
+    maintenance: number;
+  }
+
+  export interface Score {
+    final: number;
+    detail: Detail;
+  }
+
+  export interface WapperObject {
+    package: Package;
+    flags: Flags;
+    score: Score;
+    searchScore: number;
+  }
+
+  export interface NpmTemplateResult {
+    objects: WapperObject[];
+    total: number;
+    time: string;
+  }
+}

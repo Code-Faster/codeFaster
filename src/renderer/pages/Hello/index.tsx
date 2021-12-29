@@ -24,7 +24,7 @@ import { useState } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { Link } from 'react-router-dom';
 import db from '../../dbModel';
-import MainOpts from '../../util/mainOpts';
+import { openDirectoryDialog } from '../../util';
 
 const scopedPackagePattern = new RegExp('^(?:@([^/]+?)[/])?([^/]+?)$');
 const { Option } = Select;
@@ -36,10 +36,16 @@ const HelloPage: React.FC = () => {
   });
   const importProject = async () => {
     // eslint-disable-next-line @typescript-eslint/no-use-before-define
-    const url = await MainOpts.openDirectoryDialog();
+    const url = await openDirectoryDialog();
     db.projects.add({
+      owner: '',
+      templateId: 0,
+      templateDir: '',
+      // TODO：  拆分url 转化成dir + name
       projectDir: url,
       projectName: url,
+      type: 1,
+      description: '',
     });
     // 判断该目录下是否存在初始化的json,不存在抛出错误
   };
@@ -72,9 +78,17 @@ const HelloPage: React.FC = () => {
         onOk={() => {
           formRef
             .validateFields()
-            .then((values: Project) => {
+            .then(async (values: Project) => {
               formRef.resetFields();
               console.log(values);
+              const template = await db.templates.get({
+                id: values.templateId,
+              });
+              if (template?.templateDir) {
+                values.templateDir = template?.templateDir;
+              } else {
+                throw Error('the template must hava templateDir');
+              }
               db.projects.add(values);
               setCreateProjectModal(false);
             })
@@ -181,7 +195,7 @@ const HelloPage: React.FC = () => {
                         style={{ height: 24 }}
                         onClick={async () => {
                           formRef.setFieldsValue({
-                            projectDir: await MainOpts.openDirectoryDialog(),
+                            projectDir: await openDirectoryDialog(),
                           });
                         }}
                       />
@@ -246,7 +260,7 @@ const HelloPage: React.FC = () => {
                         {templateList?.map((template: Template) => (
                           <Option
                             key={`${template.id}`}
-                            value={`${template.id}`}
+                            value={template.id || 0}
                           >
                             {template.templateName}({template.description})
                           </Option>

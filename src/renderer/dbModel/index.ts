@@ -8,16 +8,16 @@ class ProjectDatabase extends Dexie {
   sqlConnections!: Table<SqlConnection, number>; // id is number in this case
 
   public constructor() {
-    super('code-faster');
+    super('codeFaster');
     this.version(1).stores({
       projects:
         '++id,projectName,projectDir,owner,type,description,templateId,createTime,updateTime',
     });
     this.version(1).stores({
       templates:
-        '++id,templateName,templateDir,owner,type,description,createTime,updateTime',
+        '++id,url,templateName,templateDir,owner,type,description,createTime,updateTime',
     });
-    this.version(4).stores({
+    this.version(1).stores({
       sqlConnections:
         '++id,connectionName,dbType,host,user,password,database,port',
     });

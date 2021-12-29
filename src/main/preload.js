@@ -6,6 +6,8 @@ const {
   downloadFile,
   initMysql,
   createModel,
+  initProject,
+  execCommand,
 } = require('./channelList');
 
 contextBridge.exposeInMainWorld('electron', {
@@ -55,5 +57,7 @@ contextBridge.exposeInMainWorld('electron', {
     downloadFile,
     initMysql,
     createModel,
+    initProject,
+    execCommand,
   },
 });

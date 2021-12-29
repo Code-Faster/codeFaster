@@ -28,15 +28,19 @@ import { TableRowSelection } from 'antd/lib/table/interface';
 import DbOpts from '../../util/dbOpts';
 import db from '../../dbModel';
 import DescriptionItem from '../../components/Description';
-import MainOpts from '../../util/mainOpts';
+import { initProject, createModel, openDirectoryDialog } from '../../util';
 
 const { TabPane } = Tabs;
 const { Title } = Typography;
 
 const ProjectPage: React.FC = () => {
   const [project, setProject] = useState<Project>({
-    projectName: '',
+    owner: '',
+    templateId: 0,
+    templateDir: '',
     projectDir: '',
+    projectName: '',
+    type: 1,
     description: '',
   });
   const [sqlConnections, setSqlConnections] = useState<SqlConnection[]>([]);
@@ -245,6 +249,9 @@ const ProjectPage: React.FC = () => {
         <Button
           type="primary"
           style={{ position: 'absolute', top: 10, right: 10 }}
+          onClick={() => {
+            initProject(project);
+          }}
         >
           初始化项目
         </Button>
@@ -267,7 +274,11 @@ const ProjectPage: React.FC = () => {
                 message.error({ content: '请至少选择一个表！' });
               }
               values.tableArr = tableArr;
-              MainOpts.createModel(values, project);
+              createModel(values, project);
+              message.success({ content: '生成成功！' });
+              // 重置选择的表
+              setSelectedRowKeys([]);
+              setTableArr([]);
             }}
           >
             <Row gutter={16}>
@@ -395,7 +406,7 @@ const ProjectPage: React.FC = () => {
                           style={{ height: 24 }}
                           onClick={async () => {
                             modelForm.setFieldsValue({
-                              buildPath: await MainOpts.openDirectoryDialog(),
+                              buildPath: await openDirectoryDialog(),
                             });
                           }}
                         />
@@ -423,7 +434,7 @@ const ProjectPage: React.FC = () => {
                           style={{ height: 24 }}
                           onClick={async () => {
                             modelForm.setFieldsValue({
-                              buildPathVo: await MainOpts.openDirectoryDialog(),
+                              buildPathVo: await openDirectoryDialog(),
                             });
                           }}
                         />

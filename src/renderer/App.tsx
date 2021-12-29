@@ -32,7 +32,6 @@ import CustomizePage from './pages/Customize';
 import PlusPage from './pages/Plus';
 import DocsPage from './pages/Docs';
 import TemplatePage from './pages/Template';
-import db from './dbModel';
 
 const { Header, Sider, Content } = Layout;
 const { Text } = Typography;
@@ -46,37 +45,6 @@ const App = () => {
    */
   const bgColor = '#6667AB';
   useEffect(() => {
-    // eslint-disable-next-line promise/catch-or-return
-    db.templates.count().then((count: number) => {
-      // 添加默认模版路径
-      if (count === 0) {
-        db.templates.add({
-          /** 模版名称 */
-          templateName: 'Springboot_Dubbo_Nacos',
-          /** 项目路径 */
-          templateDir: 'string',
-          /** 作者 */
-          owner: 'Code Faster',
-          /** 语言类型 1、Java 2、JavaScript */
-          type: 1,
-          /** 简介 */
-          description: 'springboot + dubbo + nacos 微服务项目',
-        });
-        db.templates.add({
-          /** 模版名称 */
-          templateName: 'React_AntDesignPro',
-          /** 项目路径 */
-          templateDir: 'string',
-          /** 作者 */
-          owner: 'Code Faster',
-          /** 语言类型 1、Java 2、JavaScript */
-          type: 2,
-          /** 简介 */
-          description: 'React + AntDesignPro 实现中后台前端开发',
-        });
-      }
-      return count;
-    });
     ConfigProvider.config({
       theme: {
         primaryColor: bgColor,

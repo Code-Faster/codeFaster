@@ -1,39 +1,143 @@
-import { SearchOutlined } from '@ant-design/icons';
-import { Avatar, Col, Divider, Input, List, Radio, Row, Tabs } from 'antd';
-// eslint-disable-next-line import/order
-import styles from './index.module.less';
-import 'antd/dist/antd.variable.min.css';
-import TemplateDatabase from '../../dbModel';
-// eslint-disable-next-line import/order
 import { useLiveQuery } from 'dexie-react-hooks';
-import DescriptionItem from '../../components/Description';
+import { SearchOutlined } from '@ant-design/icons';
+import { useEffect, useState } from 'react';
+import {
+  Avatar,
+  Button,
+  Col,
+  Descriptions,
+  Divider,
+  Input,
+  List,
+  message,
+  Row,
+  Tabs,
+  Tag,
+} from 'antd';
+import Search from 'antd/lib/input/Search';
+import { execNpmCommand } from '../../util';
+import styles from './index.module.less';
+import TemplateDatabase from '../../dbModel';
 
 const { TabPane } = Tabs;
+const prefix = 'codefaster-';
 const TemplatePage: React.FC = () => {
+  const [templateResult, setTemplateResult] = useState<Npm.NpmTemplateResult>();
+  const [activityResult, setActivityResult] = useState<Npm.Package>();
+  const [installDetail, setInstallDetail] = useState<Template>();
+
+  const fetchNpm = async (params = '') => {
+    const response = await fetch(
+      `https://registry.npmjs.com/-/v1/search?text=${prefix}${params}`
+    );
+    if (response) {
+      const data: Npm.NpmTemplateResult = await response.json();
+      const templates = await TemplateDatabase.templates.toArray();
+      data.objects.map((ele: Npm.WapperObject) => {
+        if (templates) {
+          ele.package.hasInstall = templates.some(
+            (plugin) => plugin.templateName === ele.package.name
+          );
+        }
+        return ele;
+      });
+      setTemplateResult(data);
+    }
+  };
+  const addTemplate = (_activityResult: Npm.Package) => {
+    // 判断是否重复下载
+    const count = TemplateDatabase.templates
+      .where('templateName')
+      .equals(_activityResult.name)
+      .count()
+      .then((ele) => {
+        if (ele === 0) {
+          TemplateDatabase.templates.add({
+            /** 模版下载地址 */
+            url: _activityResult.links.npm,
+            /** 模版名称 */
+            templateName: _activityResult.name,
+            /** 项目路径 */
+            templateDir: 'string',
+            /** 作者 */
+            owner: _activityResult.author.name,
+            /** 语言类型 1、Java 2、JavaScript */
+            type: 1,
+            /** 简介 */
+            description: _activityResult.description,
+          });
+          const result = execNpmCommand('install', [_activityResult.name]);
+          console.log(result);
+        } else {
+          message.error('本地已安装');
+        }
+        if (activityResult) {
+          setActivityResult({ ...activityResult, hasInstall: true });
+          templateResult?.objects.map((e) => {
+            e.package.hasInstall = true;
+            return e;
+          });
+        }
+        return ele;
+      });
+  };
+  const removeTemplate = (ele: Template) => {
+    if (ele.id)
+      TemplateDatabase.templates
+        .where('id')
+        .equals(ele.id)
+        .delete()
+        .then((deleteCount) => {
+          setInstallDetail(undefined);
+          const result = execNpmCommand('uninstall', [ele.templateName]);
+          console.log(result);
+          return deleteCount;
+        })
+        .catch((e) => {
+          // eslint-disable-next-line no-console
+          console.error(e.stack || e);
+        });
+  };
   const list = useLiveQuery(async () => {
     return TemplateDatabase.templates.toArray();
   });
+
   const getColor = () => {
     return `#${Math.floor(Math.random() * 16777215).toString(16)}`;
   };
+  useEffect(() => {
+    fetchNpm();
+    return () => {};
+  }, []);
   return (
     <div>
       <Tabs type="card">
         <TabPane tab="模版市场" key="1">
           <Row gutter={16}>
             <Col span={10}>
-              <Input
+              <Search
                 className={styles.searchInput}
                 size="large"
+                allowClear
                 placeholder="搜索模版"
-                prefix={<SearchOutlined />}
+                enterButton
+                onSearch={(value) => {
+                  fetchNpm(value);
+                }}
               />
-              <Divider style={{ margin: 5 }} />
               <List
                 itemLayout="horizontal"
-                dataSource={list}
-                renderItem={(item: Template) => (
-                  <List.Item className={styles.listItemHover}>
+                dataSource={templateResult?.objects}
+                pagination={{ position: 'bottom' }}
+                size="small"
+                renderItem={(item: Npm.WapperObject) => (
+                  <List.Item
+                    key={item.package.name}
+                    className={styles.listItemHover}
+                    onClick={() => {
+                      setActivityResult(item.package);
+                    }}
+                  >
                     <List.Item.Meta
                       avatar={
                         <Avatar
@@ -43,13 +147,13 @@ const TemplatePage: React.FC = () => {
                           }}
                           size="large"
                         >
-                          {item.templateName
+                          {item.package.name
                             ?.substring(0, 1)
                             .toLocaleUpperCase()}
                         </Avatar>
                       }
-                      title={item.templateName}
-                      description={item.templateDir}
+                      title={item.package.name.replace(prefix, '')}
+                      description={item.package.description}
                     />
                   </List.Item>
                 )}
@@ -59,22 +163,85 @@ const TemplatePage: React.FC = () => {
               <Divider type="vertical" style={{ height: '100vh' }} />
             </Col>
             <Col span={13} style={{ overflowY: 'auto', height: '100vh' }}>
-              <p
-                className="site-description-item-profile-p"
-                style={{ marginBottom: 24 }}
-              >
-                User Profile
-              </p>
-              <Row>
-                <Col span={24}>
-                  <DescriptionItem
-                    type="vertical"
-                    title="Skills"
-                    content="C / C + +, data structures, software engineering, operating systems, computer networks, databases, compiler theory, computer architecture, Microcomputer Principle and Interface Technology, Computer English, Java, ASP, etc."
-                  />
-                </Col>
-              </Row>
-              <Divider />
+              {activityResult && (
+                <Descriptions
+                  title={activityResult?.name}
+                  column={1}
+                  bordered
+                  labelStyle={{ width: 95 }}
+                  extra={
+                    activityResult?.hasInstall === false && (
+                      <Button
+                        onClick={() => {
+                          addTemplate(activityResult);
+                        }}
+                      >
+                        下载
+                      </Button>
+                    )
+                  }
+                >
+                  <Descriptions.Item label="npm">
+                    <a
+                      href={activityResult?.links.npm}
+                      target="_blank"
+                      rel="noreferrer"
+                    >
+                      {activityResult?.links.npm}
+                    </a>
+                  </Descriptions.Item>
+                  <Descriptions.Item label="homepage">
+                    <a
+                      href={activityResult?.links.homepage}
+                      target="_blank"
+                      rel="noreferrer"
+                    >
+                      {activityResult?.links.homepage}
+                    </a>
+                  </Descriptions.Item>
+                  <Descriptions.Item label="repository">
+                    <a
+                      href={activityResult?.links.repository}
+                      target="_blank"
+                      rel="noreferrer"
+                    >
+                      {activityResult?.links.repository}
+                    </a>
+                  </Descriptions.Item>
+                  <Descriptions.Item label="bugs">
+                    <a
+                      href={activityResult?.links.bugs}
+                      target="_blank"
+                      rel="noreferrer"
+                    >
+                      {activityResult?.links.bugs}
+                    </a>
+                  </Descriptions.Item>
+
+                  <Descriptions.Item label="描述">
+                    {activityResult?.description}
+                  </Descriptions.Item>
+                  <Descriptions.Item label="关键词">
+                    {activityResult?.keywords &&
+                      activityResult?.keywords.map((ele) => {
+                        return (
+                          <Tag color="blue" key={ele}>
+                            {ele}
+                          </Tag>
+                        );
+                      })}
+                  </Descriptions.Item>
+                  <Descriptions.Item label="版本">
+                    {activityResult?.version}
+                  </Descriptions.Item>
+                  <Descriptions.Item label="作者">
+                    {activityResult?.author.name}
+                  </Descriptions.Item>
+                  <Descriptions.Item label="日期">
+                    {activityResult?.date}
+                  </Descriptions.Item>
+                </Descriptions>
+              )}
             </Col>
           </Row>
         </TabPane>
@@ -92,7 +259,13 @@ const TemplatePage: React.FC = () => {
                 itemLayout="horizontal"
                 dataSource={list}
                 renderItem={(item: Template) => (
-                  <List.Item className={styles.listItemHover}>
+                  <List.Item
+                    className={styles.listItemHover}
+                    key={item.id}
+                    onClick={() => {
+                      setInstallDetail(item);
+                    }}
+                  >
                     <List.Item.Meta
                       avatar={
                         <Avatar
@@ -108,7 +281,7 @@ const TemplatePage: React.FC = () => {
                         </Avatar>
                       }
                       title={item.templateName}
-                      description={item.templateDir}
+                      description={item.description}
                     />
                   </List.Item>
                 )}
@@ -118,30 +291,36 @@ const TemplatePage: React.FC = () => {
               <Divider type="vertical" style={{ height: '100vh' }} />
             </Col>
             <Col span={13} style={{ overflowY: 'auto', height: '100vh' }}>
-              <p
-                className="site-description-item-profile-p"
-                style={{ marginBottom: 24 }}
-              >
-                User Profile
-              </p>
-              <p className="site-description-item-profile-p">Personal</p>
-              <Row>
-                <Col span={12}>
-                  <DescriptionItem
-                    type="vertical"
-                    title="Full Name"
-                    content="Lily"
-                  />
-                </Col>
-                <Col span={12}>
-                  <DescriptionItem
-                    type="vertical"
-                    title="Account"
-                    content="AntDesign@example.com"
-                  />
-                </Col>
-              </Row>
-              <Divider />
+              {installDetail && (
+                <Descriptions
+                  title={installDetail?.templateName}
+                  column={1}
+                  bordered
+                  labelStyle={{ width: 95 }}
+                  extra={
+                    <Button
+                      onClick={() => {
+                        removeTemplate(installDetail);
+                      }}
+                    >
+                      卸载
+                    </Button>
+                  }
+                >
+                  <Descriptions.Item label="语法">
+                    {installDetail?.type === 1 ? 'Java' : 'JavaScrpit'}
+                  </Descriptions.Item>
+                  <Descriptions.Item label="描述">
+                    {installDetail?.description}
+                  </Descriptions.Item>
+                  <Descriptions.Item label="作者">
+                    {installDetail?.owner}
+                  </Descriptions.Item>
+                  <Descriptions.Item label="仓库">
+                    {installDetail?.url}
+                  </Descriptions.Item>
+                </Descriptions>
+              )}
             </Col>
           </Row>
         </TabPane>
