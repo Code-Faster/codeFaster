@@ -1,3 +1,4 @@
+/* eslint-disable import/extensions */
 import {
   ConsoleSqlOutlined,
   FolderOpenOutlined,
@@ -17,6 +18,7 @@ import {
   message,
   Modal,
   Row,
+  Select,
   Space,
   Table,
   Tabs,
@@ -28,13 +30,18 @@ import { TableRowSelection } from 'antd/lib/table/interface';
 import DbOpts from '../../util/dbOpts';
 import db from '../../dbModel';
 import DescriptionItem from '../../components/Description';
-import { initProject, createModel, openDirectoryDialog } from '../../util';
+import {
+  initProject,
+  createModel,
+  openDialog,
+  generatorCURD,
+} from '../../util';
 
 const { TabPane } = Tabs;
 const { Title } = Typography;
-
+const { Option } = Select;
 const ProjectPage: React.FC = () => {
-  const [project, setProject] = useState<Project>({
+  const [project, setProject] = useState<CodeFaster.Project>({
     owner: '',
     templateId: 0,
     templateDir: '',
@@ -43,14 +50,19 @@ const ProjectPage: React.FC = () => {
     type: 1,
     description: '',
   });
-  const [sqlConnections, setSqlConnections] = useState<SqlConnection[]>([]);
+  const [sqlConnections, setSqlConnections] = useState<
+    CodeFaster.SqlConnection[]
+  >([]);
   const [selectedRowKeys, setSelectedRowKeys] = useState<React.Key[]>([]);
   const [tableArr, setTableArr] = useState<[]>([]);
   const [sqlList, setSqlList] = useState<[]>([]);
   const [createSqlModal, setCreateSqlModal] = useState<boolean>(false);
+  const [templateList, setTemplateList] = useState<CodeFaster.Template[]>();
   const params = useParams();
   const [modelForm] = Form.useForm();
   const [sqlForm] = Form.useForm();
+  const [basicForm] = Form.useForm();
+  const [CURDForm] = Form.useForm();
 
   /**
    * 查询数据库连接
@@ -66,6 +78,21 @@ const ProjectPage: React.FC = () => {
       })
       .catch((e) => {
         console.error(e.stack || e);
+      });
+  };
+  /** 根据参数加载模版数据 */
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const loadTemplate = (value: number | undefined) => {
+    db.templates
+      .where('type')
+      .equals(parseInt(`${value}`, 10))
+      .toArray()
+      .then((ele) => {
+        setTemplateList(ele);
+        return ele;
+      })
+      .catch((e) => {
+        console.log(e);
       });
   };
 
@@ -96,7 +123,7 @@ const ProjectPage: React.FC = () => {
         onOk={() => {
           sqlForm
             .validateFields()
-            .then((values: SqlConnection) => {
+            .then((values: CodeFaster.SqlConnection) => {
               sqlForm.resetFields();
               db.sqlConnections.add(values);
               setCreateSqlModal(false);
@@ -221,9 +248,11 @@ const ProjectPage: React.FC = () => {
         .get({
           id: parseInt(params.projectId, 10),
         })
-        .then((data) => {
+        .then((data: CodeFaster.Project | undefined) => {
           if (data) {
             setProject(data);
+            basicForm.setFieldsValue(data);
+            loadTemplate(data.type);
           }
           return data;
         })
@@ -231,10 +260,11 @@ const ProjectPage: React.FC = () => {
           // eslint-disable-next-line no-console
           console.error(e.stack || e);
         });
-      queryAllSqlConnections();
     }
+
+    queryAllSqlConnections();
     return () => {};
-  }, [params.projectId]);
+  }, [basicForm, params.projectId]);
   return (
     <main>
       <CreateSqlModal />
@@ -264,16 +294,218 @@ const ProjectPage: React.FC = () => {
         <Divider style={{ marginBottom: 0 }} />
       </Typography>
       <Tabs style={{ paddingBottom: 16 }}>
+        <TabPane tab="基础参数" key="0">
+          <Form
+            layout="vertical"
+            form={basicForm}
+            onFinish={(values: CodeFaster.Project) => {
+              if (project.id) {
+                db.projects.update(project.id, values);
+              }
+              message.success({ content: '更新成功！' });
+            }}
+          >
+            <Row gutter={16}>
+              <Col span={24}>
+                <Form.Item
+                  name="templateId"
+                  label="项目模版"
+                  rules={[{ required: true, message: '请选择项目模版' }]}
+                >
+                  <Select placeholder="请选择项目类型">
+                    {templateList?.map((template: CodeFaster.Template) => (
+                      <Option key={`${template.id}`} value={template.id || 0}>
+                        {template.templateName}({template.description})
+                      </Option>
+                    ))}
+                  </Select>
+                </Form.Item>
+              </Col>
+            </Row>
+            <Row gutter={16}>
+              <Col span={24}>
+                <Form.Item
+                  name="defaultPojoPath"
+                  label="POJO目录"
+                  rules={[
+                    {
+                      required: true,
+                      message: 'POJO目录',
+                    },
+                  ]}
+                >
+                  <Input
+                    style={{ width: 'calc(100%)' }}
+                    placeholder="请选择POJO目录"
+                    addonAfter={
+                      <Form.Item noStyle>
+                        <Button
+                          type="link"
+                          icon={<FolderOpenOutlined />}
+                          style={{ height: 24 }}
+                          onClick={async () => {
+                            basicForm.setFieldsValue({
+                              defaultPojoPath: (
+                                await openDialog({
+                                  defaultPath: project.projectDir,
+                                  properties: ['openDirectory'],
+                                })
+                              ).path,
+                            });
+                          }}
+                        />
+                      </Form.Item>
+                    }
+                  />
+                </Form.Item>
+              </Col>
+            </Row>
+            <Row gutter={16}>
+              <Col span={24}>
+                <Form.Item
+                  name="defaultVoPath"
+                  label="VO目录"
+                  rules={[{ required: true, message: '请选择VO目录' }]}
+                >
+                  <Input
+                    style={{ width: 'calc(100%)' }}
+                    placeholder="请选择VO目录"
+                    addonAfter={
+                      <Form.Item noStyle>
+                        <Button
+                          type="link"
+                          icon={<FolderOpenOutlined />}
+                          style={{ height: 24 }}
+                          onClick={async () => {
+                            basicForm.setFieldsValue({
+                              defaultVoPath: (
+                                await openDialog({
+                                  defaultPath: project.projectDir,
+                                  properties: ['openDirectory'],
+                                })
+                              ).path,
+                            });
+                          }}
+                        />
+                      </Form.Item>
+                    }
+                  />
+                </Form.Item>
+              </Col>
+            </Row>
+            <Row gutter={16}>
+              <Col span={24}>
+                <Form.Item
+                  name="defaultServicePath"
+                  label="Service默认目录"
+                  rules={[{ required: true, message: '请选择Service默认目录' }]}
+                >
+                  <Input
+                    style={{ width: 'calc(100%)' }}
+                    placeholder="请选择Service默认目录"
+                    addonAfter={
+                      <Form.Item noStyle>
+                        <Button
+                          type="link"
+                          icon={<FolderOpenOutlined />}
+                          style={{ height: 24 }}
+                          onClick={async () => {
+                            basicForm.setFieldsValue({
+                              defaultServicePath: (
+                                await openDialog({
+                                  defaultPath: project.projectDir,
+                                  properties: ['openDirectory'],
+                                })
+                              ).path,
+                            });
+                          }}
+                        />
+                      </Form.Item>
+                    }
+                  />
+                </Form.Item>
+              </Col>
+            </Row>
+            <Row gutter={16}>
+              <Col span={24}>
+                <Form.Item
+                  name="defaultServiceImplPath"
+                  label="ServiceImpl默认目录"
+                  rules={[
+                    { required: true, message: '请选择ServiceImpl默认目录' },
+                  ]}
+                >
+                  <Input
+                    style={{ width: 'calc(100%)' }}
+                    placeholder="请选择ServiceImpl默认目录"
+                    addonAfter={
+                      <Form.Item noStyle>
+                        <Button
+                          type="link"
+                          icon={<FolderOpenOutlined />}
+                          style={{ height: 24 }}
+                          onClick={async () => {
+                            basicForm.setFieldsValue({
+                              defaultServiceImplPath: (
+                                await openDialog({
+                                  defaultPath: project.projectDir,
+                                  properties: ['openDirectory'],
+                                })
+                              ).path,
+                            });
+                          }}
+                        />
+                      </Form.Item>
+                    }
+                  />
+                </Form.Item>
+              </Col>
+            </Row>
+            <Row gutter={16}>
+              <Col span={24}>
+                <Form.Item
+                  name="description"
+                  label="简介"
+                  rules={[
+                    {
+                      required: true,
+                      message: '请输入项目简介',
+                    },
+                  ]}
+                >
+                  <Input.TextArea rows={4} placeholder="请输入项目简介" />
+                </Form.Item>
+              </Col>
+            </Row>
+            <Form.Item
+              wrapperCol={{ offset: 9, span: 6 }}
+              style={{ paddingTop: 16 }}
+            >
+              <Space>
+                <Button type="primary" htmlType="submit">
+                  保存参数
+                </Button>
+                <Button
+                  htmlType="button"
+                  onClick={() => {
+                    basicForm.resetFields();
+                  }}
+                >
+                  重置
+                </Button>
+              </Space>
+            </Form.Item>
+          </Form>
+        </TabPane>
         <TabPane tab="模型生成" key="1">
           <Form
             layout="vertical"
-            name="model"
             form={modelForm}
-            onFinish={(values: Model) => {
+            onFinish={(values: CodeFaster.Model) => {
               if (tableArr.length === 0) {
                 message.error({ content: '请至少选择一个表！' });
               }
-              values.tableArr = tableArr;
+              values.tableColArr = tableArr;
               createModel(values, project);
               message.success({ content: '生成成功！' });
               // 重置选择的表
@@ -298,7 +530,7 @@ const ProjectPage: React.FC = () => {
                   </Button>
                   <Space direction="horizontal">
                     {sqlConnections?.map(
-                      (ele: SqlConnection, index: number) => (
+                      (ele: CodeFaster.SqlConnection, index: number) => (
                         <Card
                           size="small"
                           title={ele.connectionName}
@@ -406,7 +638,12 @@ const ProjectPage: React.FC = () => {
                           style={{ height: 24 }}
                           onClick={async () => {
                             modelForm.setFieldsValue({
-                              buildPath: await openDirectoryDialog(),
+                              buildPath: (
+                                await openDialog({
+                                  defaultPath: project.defaultPojoPath,
+                                  properties: ['openDirectory'],
+                                })
+                              ).path,
                             });
                           }}
                         />
@@ -434,7 +671,12 @@ const ProjectPage: React.FC = () => {
                           style={{ height: 24 }}
                           onClick={async () => {
                             modelForm.setFieldsValue({
-                              buildPathVo: await openDirectoryDialog(),
+                              buildPathVo: (
+                                await openDialog({
+                                  defaultPath: project.defaultVoPath,
+                                  properties: ['openDirectory'],
+                                })
+                              ).path,
                             });
                           }}
                         />
@@ -466,7 +708,317 @@ const ProjectPage: React.FC = () => {
           </Form>
         </TabPane>
         <TabPane tab="CURD" key="2">
-          <p>CURD</p>
+          <Form
+            layout="vertical"
+            form={CURDForm}
+            onFinish={async (values: CodeFaster.CURDForm) => {
+              console.log(values);
+              // 根据模版ID找到模版信息
+              if (project) {
+                const template: CodeFaster.Template = await db.templates.get({
+                  id: project.templateId,
+                });
+                if (template?.templateName) {
+                  generatorCURD(template?.templateName, project, values)
+                    .then((data) => {
+                      message.success({ content: '执行成功！' });
+                      return data;
+                    })
+                    .catch((e) => {
+                      throw Error(e.stack || e);
+                    });
+                }
+              }
+            }}
+          >
+            <Row gutter={16}>
+              <Col span={24}>
+                <Form.Item name="pojo" hidden>
+                  <Input placeholder="请输入项目名称" />
+                </Form.Item>
+                <Form.Item
+                  name="pojoPath"
+                  label="POJO地址"
+                  rules={[
+                    {
+                      required: true,
+                      message: '目标POJO地址',
+                    },
+                  ]}
+                >
+                  <Input
+                    style={{ width: 'calc(100%)' }}
+                    placeholder="请选择目标POJO地址"
+                    disabled
+                    addonAfter={
+                      <Form.Item noStyle>
+                        <Button
+                          type="link"
+                          icon={<FolderOpenOutlined />}
+                          style={{ height: 24 }}
+                          onClick={async () => {
+                            const dialog = await openDialog({
+                              defaultPath: project.defaultPojoPath,
+                              properties: ['openFile'],
+                            });
+                            CURDForm.setFieldsValue({
+                              pojo: dialog.name,
+                              pojoPath: dialog.path,
+                            });
+                          }}
+                        />
+                      </Form.Item>
+                    }
+                  />
+                </Form.Item>
+              </Col>
+            </Row>
+            <Row gutter={16}>
+              <Col span={24}>
+                <Form.Item name="vo" hidden>
+                  <Input placeholder="请输入项目名称" />
+                </Form.Item>
+                <Form.Item
+                  name="voPath"
+                  label="VO地址"
+                  rules={[
+                    {
+                      required: true,
+                      message: '目标VO地址',
+                    },
+                  ]}
+                >
+                  <Input
+                    style={{ width: 'calc(100%)' }}
+                    disabled
+                    placeholder="请选择目标VO地址"
+                    addonAfter={
+                      <Form.Item noStyle>
+                        <Button
+                          type="link"
+                          icon={<FolderOpenOutlined />}
+                          style={{ height: 24 }}
+                          onClick={async () => {
+                            const dialog = await openDialog({
+                              defaultPath: project.defaultVoPath,
+                              properties: ['openFile'],
+                            });
+                            CURDForm.setFieldsValue({
+                              vo: dialog.name,
+                              voPath: dialog.path,
+                            });
+                          }}
+                        />
+                      </Form.Item>
+                    }
+                  />
+                </Form.Item>
+              </Col>
+            </Row>
+            <Row gutter={16}>
+              <Col span={24}>
+                <Form.Item
+                  name="servicePath"
+                  label="Service地址"
+                  rules={[
+                    {
+                      required: true,
+                      message: '目标Service地址',
+                    },
+                  ]}
+                >
+                  <Input
+                    style={{ width: 'calc(100%)' }}
+                    disabled
+                    placeholder="请选择目标Service地址"
+                    addonAfter={
+                      <Form.Item noStyle>
+                        <Button
+                          type="link"
+                          icon={<FolderOpenOutlined />}
+                          style={{ height: 24 }}
+                          onClick={async () => {
+                            CURDForm.setFieldsValue({
+                              servicePath: (
+                                await openDialog({
+                                  defaultPath: project.defaultServicePath,
+                                  properties: ['openDirectory'],
+                                })
+                              ).path,
+                            });
+                          }}
+                        />
+                      </Form.Item>
+                    }
+                  />
+                </Form.Item>
+              </Col>
+            </Row>
+            <Row gutter={16}>
+              <Col span={24}>
+                <Form.Item
+                  name="serviceImplPath"
+                  label="ServiceImpl地址"
+                  rules={[
+                    {
+                      required: true,
+                      message: 'ServiceImpl地址',
+                    },
+                  ]}
+                >
+                  <Input
+                    style={{ width: 'calc(100%)' }}
+                    disabled
+                    placeholder="请选择ServiceImpl地址"
+                    addonAfter={
+                      <Form.Item noStyle>
+                        <Button
+                          type="link"
+                          icon={<FolderOpenOutlined />}
+                          style={{ height: 24 }}
+                          onClick={async () => {
+                            CURDForm.setFieldsValue({
+                              serviceImplPath: (
+                                await openDialog({
+                                  defaultPath: project.defaultServiceImplPath,
+                                  properties: ['openDirectory'],
+                                })
+                              ).path,
+                            });
+                          }}
+                        />
+                      </Form.Item>
+                    }
+                  />
+                </Form.Item>
+              </Col>
+            </Row>
+            <Row gutter={16}>
+              <Col span={24}>
+                <Form.Item
+                  name="controllerPath"
+                  label="Controller地址"
+                  rules={[
+                    { required: true, message: '请选择目标Controller地址' },
+                  ]}
+                >
+                  <Input
+                    style={{ width: 'calc(100%)' }}
+                    disabled
+                    placeholder="请选择目标Controller地址"
+                    addonAfter={
+                      <Form.Item noStyle>
+                        <Button
+                          type="link"
+                          icon={<FolderOpenOutlined />}
+                          style={{ height: 24 }}
+                          onClick={async () => {
+                            CURDForm.setFieldsValue({
+                              controllerPath: (
+                                await openDialog({
+                                  defaultPath: project.projectDir,
+                                  properties: ['openDirectory'],
+                                })
+                              ).path,
+                            });
+                          }}
+                        />
+                      </Form.Item>
+                    }
+                  />
+                </Form.Item>
+              </Col>
+            </Row>
+            <Row gutter={16}>
+              <Col span={24}>
+                <Form.Item
+                  name="mapperPath"
+                  label="mapper地址"
+                  rules={[{ required: true, message: '请选择目标mapper地址' }]}
+                >
+                  <Input
+                    style={{ width: 'calc(100%)' }}
+                    placeholder="请选择目标mapper地址"
+                    disabled
+                    addonAfter={
+                      <Form.Item noStyle>
+                        <Button
+                          type="link"
+                          icon={<FolderOpenOutlined />}
+                          style={{ height: 24 }}
+                          onClick={async () => {
+                            CURDForm.setFieldsValue({
+                              mapperPath: (
+                                await openDialog({
+                                  defaultPath: project.projectDir,
+                                  properties: ['openDirectory'],
+                                })
+                              ).path,
+                            });
+                          }}
+                        />
+                      </Form.Item>
+                    }
+                  />
+                </Form.Item>
+              </Col>
+            </Row>
+            <Row gutter={16}>
+              <Col span={24}>
+                <Form.Item
+                  name="unitTestPath"
+                  label="unitTest地址"
+                  rules={[
+                    { required: true, message: '请选择目标unitTest地址' },
+                  ]}
+                >
+                  <Input
+                    style={{ width: 'calc(100%)' }}
+                    disabled
+                    placeholder="请选择目标unitTest地址"
+                    addonAfter={
+                      <Form.Item noStyle>
+                        <Button
+                          type="link"
+                          icon={<FolderOpenOutlined />}
+                          style={{ height: 24 }}
+                          onClick={async () => {
+                            CURDForm.setFieldsValue({
+                              unitTestPath: (
+                                await openDialog({
+                                  defaultPath: project.projectDir,
+                                  properties: ['openDirectory'],
+                                })
+                              ).path,
+                            });
+                          }}
+                        />
+                      </Form.Item>
+                    }
+                  />
+                </Form.Item>
+              </Col>
+            </Row>
+
+            <Form.Item
+              wrapperCol={{ offset: 9, span: 6 }}
+              style={{ paddingTop: 16 }}
+            >
+              <Space>
+                <Button type="primary" htmlType="submit">
+                  立即生成CURD
+                </Button>
+                <Button
+                  htmlType="button"
+                  onClick={() => {
+                    CURDForm.resetFields();
+                  }}
+                >
+                  重置
+                </Button>
+              </Space>
+            </Form.Item>
+          </Form>
         </TabPane>
         <TabPane tab="测试" key="3">
           <p>测试</p>

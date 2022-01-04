@@ -1,13 +1,13 @@
 const { contextBridge, ipcRenderer } = require('electron');
 const {
-  openDirectoryDialog,
+  openDialog,
   example,
   readFile,
-  downloadFile,
   initMysql,
   createModel,
   initProject,
   execCommand,
+  generatorCURD,
 } = require('./channelList');
 
 contextBridge.exposeInMainWorld('electron', {
@@ -16,26 +16,14 @@ contextBridge.exposeInMainWorld('electron', {
       ipcRenderer.send(example, 'ping');
     },
     on(channel, func) {
-      const validChannels = [
-        openDirectoryDialog,
-        example,
-        readFile,
-        downloadFile,
-        initMysql,
-      ];
+      const validChannels = [example];
       if (validChannels.includes(channel)) {
         // Deliberately strip event as it includes `sender`
         ipcRenderer.on(channel, (event, ...args) => func(...args));
       }
     },
     once(channel, func) {
-      const validChannels = [
-        openDirectoryDialog,
-        example,
-        readFile,
-        downloadFile,
-        initMysql,
-      ];
+      const validChannels = [example];
       if (validChannels.includes(channel)) {
         // Deliberately strip event as it includes `sender`
         ipcRenderer.once(channel, (event, ...args) => func(...args));
@@ -52,12 +40,12 @@ contextBridge.exposeInMainWorld('electron', {
     /**
      * 打开文件系统
      */
-    openDirectoryDialog,
+    openDialog,
     readFile,
-    downloadFile,
     initMysql,
     createModel,
     initProject,
     execCommand,
+    generatorCURD,
   },
 });

@@ -1130,6 +1130,11 @@
   dependencies:
     "@types/react" "*"
 
+"@types/resolve@^1.20.1":
+  "integrity" "sha512-Ku5+GPFa12S3W26Uwtw+xyrtIpaZsGYHH6zxNbZlstmlvMYSZRzOwzwsXbxlVUbHyUucctSyuFtu6bNxwYomIw=="
+  "resolved" "https://registry.npmjs.org/@types/resolve/-/resolve-1.20.1.tgz"
+  "version" "1.20.1"
+
 "@types/responselike@*", "@types/responselike@^1.0.0":
   "integrity" "sha1-JR9P59FU0rrRJavhtCmyOv0mLik="
   "resolved" "https://registry.npmmirror.com/@types/responselike/download/@types/responselike-1.0.0.tgz?cache=0&sync_timestamp=1637269963790&other_urls=https%3A%2F%2Fregistry.npmmirror.com%2F%40types%2Fresponselike%2Fdownload%2F%40types%2Fresponselike-1.0.0.tgz"

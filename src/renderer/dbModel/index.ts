@@ -11,11 +11,11 @@ class ProjectDatabase extends Dexie {
     super('codeFaster');
     this.version(1).stores({
       projects:
-        '++id,projectName,projectDir,owner,type,description,templateId,createTime,updateTime',
+        '++id,projectName,projectDir,owner,type,description,templateId,createTime,updateTime,defaultPojoPath,defaultVoPath,defaultServicePath,defaultServiceImplPath',
     });
     this.version(1).stores({
       templates:
-        '++id,url,templateName,templateDir,owner,type,description,createTime,updateTime',
+        '++id,url,templateName,templateDir,owner,type,description,version,createTime,updateTime',
     });
     this.version(1).stores({
       sqlConnections:

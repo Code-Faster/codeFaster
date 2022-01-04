@@ -62,7 +62,7 @@ const getPackageName = (filePath: string, startFix: string) => {
  * 模版生成类
  */
 export default class Template {
-  private project: Project = {
+  private project: CodeFaster.Project = {
     owner: '',
     templateId: 0,
     templateDir: '',
@@ -80,7 +80,7 @@ export default class Template {
   // 静态目录模版目录名
   private templateModelName: string = 'createTemplate';
 
-  constructor(pj: Project) {
+  constructor(pj: CodeFaster.Project) {
     this.project = pj;
     this.keyPathArr = [];
     this.projectPath = path.join(pj.projectDir, pj.projectName);
@@ -118,7 +118,7 @@ export default class Template {
    * @param buildPath
    */
   getStructure(
-    structure: FileObj,
+    structure: CodeFaster.FileObj,
     formProjectName: string,
     projectName: string,
     buildPath: string
@@ -179,14 +179,14 @@ export default class Template {
    * 拷贝模版代码，复制模版代码，内部做关键字替换
    * @param structure
    */
-  copyCoding(structure: FileObj) {
+  copyCoding(structure: CodeFaster.FileObj) {
     if (!fs.existsSync(structure.path)) {
       fs.mkdirSync(structure.path);
     }
     if (structure.isDir) {
       if (structure.children.length > 0) {
         // 如果是文件夹
-        structure.children.forEach((obj: FileObj) => {
+        structure.children.forEach((obj: CodeFaster.FileObj) => {
           // 如果子目录是dir
           if (obj.isDir) this.copyCoding(obj);
           else {
@@ -218,7 +218,7 @@ export default class Template {
   findByKey(key: string, type: number) {
     // 置空
     this.keyPathArr = [];
-    const jsonData: FileObj = this.getJsonFromPath();
+    const jsonData: CodeFaster.FileObj = this.getJsonFromPath();
     this.getModelsStructure(jsonData, key, type);
     return this.keyPathArr;
   }
@@ -240,7 +240,7 @@ export default class Template {
    * @param key   关键字
    * @param type 搜索文件夹 还是 文件 默认0 :文件夹 1: 文件 2、模糊搜索文件
    */
-  getModelsStructure(jsonData: FileObj, key: string, type: number) {
+  getModelsStructure(jsonData: CodeFaster.FileObj, key: string, type: number) {
     // 如果是文件夹
     if (jsonData.isDir) {
       if (jsonData.fileName === key && type === 0) {
@@ -252,7 +252,7 @@ export default class Template {
       }
       // 如果还有子文件, 递归执行
       if (jsonData.children.length > 0) {
-        jsonData.children.forEach((obj: FileObj) => {
+        jsonData.children.forEach((obj: CodeFaster.FileObj) => {
           this.getModelsStructure(obj, key, type);
         });
       }
@@ -278,7 +278,10 @@ export default class Template {
    * @param isUpdate 是否强制更新文件
    * @param filePath 如果强制更新，是否指定读取更新文件地址
    */
-  getJsonFromPath = (isUpdate?: boolean, filePath?: string): FileObj => {
+  getJsonFromPath = (
+    isUpdate?: boolean,
+    filePath?: string
+  ): CodeFaster.FileObj => {
     let dirPath = path.join(this.projectPath, TEMPLATE_JSON);
     // 如果导入的时候指定文件
     if (filePath) {
@@ -286,7 +289,9 @@ export default class Template {
     }
     const stats = fs.statSync(dirPath);
     if (stats.isFile()) {
-      const jsonData: FileObj = JSON.parse(fs.readFileSync(dirPath, 'utf-8'));
+      const jsonData: CodeFaster.FileObj = JSON.parse(
+        fs.readFileSync(dirPath, 'utf-8')
+      );
       // 处理项目文件目录
       if (isUpdate) {
         // 重新生成
@@ -308,7 +313,7 @@ export default class Template {
    * 遍历文件目录结构
    * @param fileObj
    */
-  fileDisplay(fileObj: FileObj) {
+  fileDisplay(fileObj: CodeFaster.FileObj) {
     // 根据文件路径读取文件，返回文件列表
     const files = fs.readdirSync(fileObj.path);
     // 遍历读取到的文件列表
@@ -330,7 +335,7 @@ export default class Template {
         const fileArr = fileObj.children.filter((ele: any) => {
           return ele.path === fileObj.path;
         });
-        const obj: FileObj = {
+        const obj: CodeFaster.FileObj = {
           fileName,
           path: filedir,
           fromPath: filedir,
@@ -345,7 +350,7 @@ export default class Template {
         }
       }
       if (isDir) {
-        const obj: FileObj = {
+        const obj: CodeFaster.FileObj = {
           fileName,
           path: filedir,
           fromPath: filedir,
@@ -372,8 +377,8 @@ export default class Template {
    * @param formData
    * @param obj
    */
-  showStructure(formData: any, obj?: any): FileObj {
-    const dirStructure: FileObj = {
+  showStructure(formData: any, obj?: any): CodeFaster.FileObj {
+    const dirStructure: CodeFaster.FileObj = {
       fileName: obj ? obj.fileName : this.templateModelName,
       path: obj ? obj.path : this.project.templateDir,
       fromPath: obj ? obj.path : this.project.templateDir,
@@ -389,7 +394,7 @@ export default class Template {
    * 生成pojo 与 vo
    * @param formData 模型属性
    */
-  generatorPOJO(formData: Model) {
+  generatorPOJO(formData: CodeFaster.Model) {
     // 解析sql文件
     const { tableArr } = formData;
     // 生成pojo文件

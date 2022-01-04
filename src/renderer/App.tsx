@@ -80,9 +80,9 @@ const App = () => {
           <Menu.Item key="2" icon={<ControlOutlined />}>
             <Link to="/customize">自定义</Link>
           </Menu.Item>
-          <Menu.Item key="3" icon={<PlusSquareOutlined />}>
+          {/* <Menu.Item key="3" icon={<PlusSquareOutlined />}>
             <Link to="/plus">插件市场</Link>
-          </Menu.Item>
+          </Menu.Item> */}
           <Menu.Item key="4" icon={<AppstoreOutlined />}>
             <Link to="/template">模版市场</Link>
           </Menu.Item>
@@ -92,9 +92,9 @@ const App = () => {
             <Menu.Item key="4" icon={<CloudUploadOutlined />}>
               部署
             </Menu.Item> */}
-          <Menu.Item key="5" icon={<GithubOutlined />}>
+          {/* <Menu.Item key="5" icon={<GithubOutlined />}>
             <Link to="/docs">学习Code Faster</Link>
-          </Menu.Item>
+          </Menu.Item> */}
         </Menu>
       </Sider>
       <Layout>

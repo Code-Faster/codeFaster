@@ -17,7 +17,7 @@ import log from 'electron-log';
 import MenuBuilder from './menu';
 import { resolveHtmlPath } from './util';
 import packageJson from '../../package.json';
-import ipcHandler from './ipcHandler';
+import IpcHandler from './ipcHandler';
 
 export default class AppUpdater {
   constructor() {
@@ -81,8 +81,7 @@ const createWindow = async () => {
   });
 
   /** 启动ipcRenderer事件监控 */
-  ipcHandler.init(mainWindow);
-  // console.log(chalk.yellow('packageJson is ') + JSON.stringify(packageJson));
+  new IpcHandler().init(mainWindow);
   /**
    * 设置应用about
    */

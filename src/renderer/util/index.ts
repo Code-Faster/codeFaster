@@ -2,15 +2,21 @@
  * 选取文件夹
  * @returns directory url
  */
-export const openDirectoryDialog = async (): Promise<string> => {
-  const arg = await window.electron.ipcRenderer.execInvokeTask(
-    window.electron.channel.openDirectoryDialog
+export const openDialog = async (
+  options: Electron.OpenDialogSyncOptions = { properties: ['openDirectory'] }
+): Promise<{ path: string; name?: string }> => {
+  const result = await window.electron.ipcRenderer.execInvokeTask(
+    window.electron.channel.openDialog,
+    options
   );
-  return arg && arg[0];
+  if (result.code === 1) {
+    throw Error(result.message);
+  }
+  return result.data;
 };
 export const createModel = async (
-  model: Model,
-  project: Project
+  model: CodeFaster.Model,
+  project: CodeFaster.Project
 ): Promise<void> => {
   await window.electron.ipcRenderer.execInvokeTask(
     window.electron.channel.createModel,
@@ -18,7 +24,9 @@ export const createModel = async (
     project
   );
 };
-export const initProject = async (project: Project): Promise<void> => {
+export const initProject = async (
+  project: CodeFaster.Project
+): Promise<void> => {
   await window.electron.ipcRenderer.execInvokeTask(
     window.electron.channel.initProject,
     project
@@ -36,10 +44,25 @@ export const execNpmCommand = async (
   return arg;
 };
 
-export default class PreloadUtil {
-  electron = window.electron;
-
-  getElectron() {
-    return this.electron;
+export const generatorCURD = async (
+  templateName: string,
+  project: CodeFaster.Project,
+  values: CodeFaster.CURDForm
+): Promise<number> => {
+  // 处理values pojo vo 实现 Table.java => Table
+  const pojo = values.pojo.split('.')[0];
+  values.pojo = pojo;
+  const vo = values.vo.split('.')[0];
+  values.vo = vo;
+  const result: CodeFaster.Result<string> =
+    await window.electron.ipcRenderer.execInvokeTask(
+      window.electron.channel.generatorCURD,
+      templateName,
+      project,
+      values
+    );
+  if (result.code === 1) {
+    throw Error(result.message);
   }
-}
+  return result.code;
+};

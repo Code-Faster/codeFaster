@@ -5,20 +5,18 @@ import fs from 'fs';
 import path from 'path';
 import chalk from 'chalk';
 import {
-  openDirectoryDialog,
+  openDialog,
   example,
   readFile,
-  downloadFile,
   initMysql,
   createModel,
   initProject,
   execCommand,
+  generatorCURD,
 } from './channelList';
 import MysqlOpt from './mysql';
 import Template from './template';
-
-/** 模版地址 */
-const playgroundPath = path.resolve(process.cwd(), 'playground');
+import TemplateLoader, { PLAYGROUND_PATH } from './templateLoader';
 
 const fileReader = (filePath: string): string => {
   const stats = fs.statSync(filePath);
@@ -26,55 +24,6 @@ const fileReader = (filePath: string): string => {
     return fs.readFileSync(filePath, 'utf-8');
   }
   throw new Error('传入的参数必须为文件地址');
-};
-/**
- *  description: 下载文件到指定目录
- *  param {string} url 文件下载链接
- *  param {string} fileName 文件名称
- *  param {string} fileType 文件格式
- *  author: longyunfei
- */
-const downloadFileToFolder = (
-  win: BrowserWindow,
-  url: string,
-  fileName: string,
-  fileType: string
-) => {
-  win.webContents.downloadURL(url);
-  win.webContents.session.once(
-    'will-download',
-    (_event, item, _webContents) => {
-      // 设置保存路径
-      const filePath = path.join(
-        app.getAppPath(),
-        '/download',
-        `${fileName}.${fileType}`
-      );
-      item.setSavePath(filePath);
-      item.on('updated', (_event, state) => {
-        if (state === 'interrupted') {
-          console.log('下载中断，可以继续');
-        } else if (state === 'progressing') {
-          if (item.isPaused()) {
-            console.log('下载暂停');
-          } else {
-            console.log(`当前下载项目的接收字节${item.getReceivedBytes()}`);
-            console.log(
-              `下载完成百分比：${
-                (item.getReceivedBytes() / item.getTotalBytes()) * 100
-              }`
-            );
-          }
-        }
-      });
-      item.once('done', (_event, state) => {
-        if (state === 'completed') {
-          // 打开文件
-          shell.openPath(filePath);
-        }
-      });
-    }
-  );
 };
 /**
  *
@@ -125,17 +74,53 @@ const execCommandAction = (
  */
 // eslint-disable-next-line @typescript-eslint/naming-convention
 export default class ipcHandler {
-  static init(win: BrowserWindow) {
+  private templateLoader: TemplateLoader;
+
+  constructor() {
+    // 执行模版加载器
+    this.templateLoader = new TemplateLoader().init();
+  }
+
+  init(win: BrowserWindow) {
+    // 执行通信模块
     ipcMain.on(example, async (event, _arg) => {
       const msgTemplate = (pingPong: string) => `IPC test: ${pingPong}`;
       event.reply(example, msgTemplate('pong'));
     });
-    ipcMain.handle(openDirectoryDialog, async () => {
-      const result = await dialog.showOpenDialogSync({
-        properties: ['openDirectory'],
-      });
-      return result;
-    });
+
+    /**
+     * 选择文件/文件夹对话框, 不允许多选
+     */
+    ipcMain.handle(
+      openDialog,
+      async (
+        _event,
+        options: Electron.OpenDialogSyncOptions
+      ): Promise<
+        CodeFaster.Result<{ name: string | undefined; path: string }>
+      > => {
+        try {
+          if (options.properties) {
+            options.properties = options.properties.filter((ele) => {
+              return ele !== 'multiSelections';
+            });
+          }
+          const result = dialog.showOpenDialogSync(options);
+          if (result === undefined) return await new Promise(() => {});
+
+          return {
+            code: 0,
+            data: {
+              name: path.resolve(result[0]).split(path.sep).pop(),
+              path: result[0],
+            },
+          };
+        } catch (error: any) {
+          return { code: 1, message: error.stack || error.message };
+        }
+      }
+    );
+
     /**
      * 根据文件地址读取文件
      * @param filePath
@@ -144,13 +129,9 @@ export default class ipcHandler {
       return fileReader(arg);
     });
 
-    ipcMain.handle(downloadFile, async (_event, args: FileParams) => {
-      return downloadFileToFolder(win, args.url, args.fileName, args.fileType);
-    });
-
     ipcMain.handle(
       initMysql,
-      async (_event, args: SqlConnection, sqlStr: string) => {
+      async (_event, args: CodeFaster.SqlConnection, sqlStr: string) => {
         const c = new MysqlOpt(args);
         const result = await c.query(sqlStr);
         return result;
@@ -159,18 +140,34 @@ export default class ipcHandler {
     /**
      * 初始化项目
      */
-    ipcMain.handle(initProject, async (_event, project: Project) => {
-      const template = new Template(project);
-      return template.init();
-    });
+    ipcMain.handle(
+      initProject,
+      async (_event, _templateName: string, project: CodeFaster.Project) => {
+        const GeneratorFactory = this.templateLoader.getPlugin(_templateName);
+        const codeGenerator: CodeFaster.CodeGenerator = new GeneratorFactory(
+          project
+        );
+        codeGenerator.init({
+          /** 其他参数 */
+          props: {},
+          /** 输出地址 */
+          releasePath: project.projectDir,
+        });
+      }
+    );
     /**
      * 生成pojo模型
      */
     ipcMain.handle(
       createModel,
-      async (_event, model: Model, project: Project) => {
+      async (
+        _event,
+        model: CodeFaster.Model,
+        project: CodeFaster.Project
+      ): Promise<CodeFaster.Result<string>> => {
         const template = new Template(project);
-        return template.generatorPOJO(model);
+        template.generatorPOJO(model);
+        return { code: 0 };
       }
     );
     /**
@@ -179,8 +176,67 @@ export default class ipcHandler {
     ipcMain.handle(
       execCommand,
       async (_event, cmd: string, modules: string[]) => {
-        console.log(chalk.red(`__dirname == ${__dirname}`));
-        return execCommandAction(cmd, modules, playgroundPath);
+        console.log(chalk.green(`PLAYGROUND_PATH == ${PLAYGROUND_PATH}`));
+        return execCommandAction(cmd, modules, PLAYGROUND_PATH);
+      }
+    );
+
+    /**
+     * 执行templateLoader命令
+     */
+    ipcMain.handle(
+      generatorCURD,
+      async (
+        _event,
+        _templateName: string,
+        project: CodeFaster.Project,
+        params: CodeFaster.CURDForm
+      ): Promise<CodeFaster.Result<string>> => {
+        try {
+          const GeneratorFactory = this.templateLoader.getPlugin(_templateName);
+          const codeGenerator: CodeFaster.CodeGenerator = new GeneratorFactory(
+            project
+          );
+          const pojoJSON = codeGenerator.getModelByPojoPath(params.pojoPath);
+          codeGenerator.generatorService({
+            /** 其他参数 */
+            props: params,
+            /** 输出地址 */
+            releasePath: params.servicePath,
+            model: pojoJSON,
+          });
+          codeGenerator.generatorServiceImpl({
+            /** 其他参数 */
+            props: params,
+            /** 输出地址 */
+            releasePath: params.serviceImplPath,
+            model: pojoJSON,
+          });
+          codeGenerator.generatorController({
+            /** 其他参数 */
+            props: params,
+            /** 输出地址 */
+            releasePath: params.controllerPath,
+            model: pojoJSON,
+          });
+          codeGenerator.generatorMapper({
+            /** 其他参数 */
+            props: params,
+            /** 输出地址 */
+            releasePath: params.mapperPath,
+            model: pojoJSON,
+          });
+          codeGenerator.generatorUnitTest({
+            /** 其他参数 */
+            props: params,
+            /** 输出地址 */
+            releasePath: params.unitTestPath,
+            model: pojoJSON,
+          });
+          return { code: 0 };
+        } catch (error: any) {
+          return { code: 1, message: error.stack || error.message };
+        }
       }
     );
   }

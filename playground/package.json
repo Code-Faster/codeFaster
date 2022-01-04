@@ -1,1 +1,5 @@
-{}
+{
+  "dependencies": {
+    "codefaster-dubbo-template": "^0.0.9"
+  }
+}

@@ -24,7 +24,7 @@ import { useState } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { Link } from 'react-router-dom';
 import db from '../../dbModel';
-import { openDirectoryDialog } from '../../util';
+import { openDialog } from '../../util';
 
 const scopedPackagePattern = new RegExp('^(?:@([^/]+?)[/])?([^/]+?)$');
 const { Option } = Select;
@@ -36,14 +36,14 @@ const HelloPage: React.FC = () => {
   });
   const importProject = async () => {
     // eslint-disable-next-line @typescript-eslint/no-use-before-define
-    const url = await openDirectoryDialog();
+    const url = await openDialog();
     db.projects.add({
       owner: '',
       templateId: 0,
       templateDir: '',
       // TODO：  拆分url 转化成dir + name
-      projectDir: url,
-      projectName: url,
+      projectDir: url.path,
+      projectName: url.name,
       type: 1,
       description: '',
     });
@@ -78,7 +78,7 @@ const HelloPage: React.FC = () => {
         onOk={() => {
           formRef
             .validateFields()
-            .then(async (values: Project) => {
+            .then(async (values: CodeFaster.Project) => {
               formRef.resetFields();
               console.log(values);
               const template = await db.templates.get({
@@ -195,7 +195,7 @@ const HelloPage: React.FC = () => {
                         style={{ height: 24 }}
                         onClick={async () => {
                           formRef.setFieldsValue({
-                            projectDir: await openDirectoryDialog(),
+                            projectDir: (await openDialog()).path,
                           });
                         }}
                       />
@@ -248,7 +248,7 @@ const HelloPage: React.FC = () => {
                 }
               >
                 {({ getFieldValue }) => {
-                  const templateList: Template[] =
+                  const templateList: CodeFaster.Template[] =
                     getFieldValue('templateList') || [];
                   return templateList.length ? (
                     <Form.Item
@@ -257,7 +257,7 @@ const HelloPage: React.FC = () => {
                       rules={[{ required: true, message: '请选择项目模版' }]}
                     >
                       <Select placeholder="请选择项目类型">
-                        {templateList?.map((template: Template) => (
+                        {templateList?.map((template: CodeFaster.Template) => (
                           <Option
                             key={`${template.id}`}
                             value={template.id || 0}
@@ -340,7 +340,7 @@ const HelloPage: React.FC = () => {
       <List
         itemLayout="horizontal"
         dataSource={projectList}
-        renderItem={(item: Project) => (
+        renderItem={(item: CodeFaster.Project) => (
           <List.Item
             className={styles.listItemHover}
             actions={[

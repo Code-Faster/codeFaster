@@ -11,6 +11,7 @@ import {
   List,
   message,
   Row,
+  Space,
   Tabs,
   Tag,
 } from 'antd';
@@ -24,7 +25,7 @@ const prefix = 'codefaster-';
 const TemplatePage: React.FC = () => {
   const [templateResult, setTemplateResult] = useState<Npm.NpmTemplateResult>();
   const [activityResult, setActivityResult] = useState<Npm.Package>();
-  const [installDetail, setInstallDetail] = useState<Template>();
+  const [installDetail, setInstallDetail] = useState<CodeFaster.Template>();
 
   const fetchNpm = async (params = '') => {
     const response = await fetch(
@@ -50,24 +51,26 @@ const TemplatePage: React.FC = () => {
       .where('templateName')
       .equals(_activityResult.name)
       .count()
-      .then((ele) => {
+      .then(async (ele) => {
         if (ele === 0) {
           TemplateDatabase.templates.add({
             /** 模版下载地址 */
             url: _activityResult.links.npm,
             /** 模版名称 */
             templateName: _activityResult.name,
-            /** 项目路径 */
-            templateDir: 'string',
             /** 作者 */
             owner: _activityResult.author.name,
             /** 语言类型 1、Java 2、JavaScript */
-            type: 1,
+            type: _activityResult.keywords[0] === 'java' ? 1 : 2,
+            version: _activityResult.version,
             /** 简介 */
             description: _activityResult.description,
           });
-          const result = execNpmCommand('install', [_activityResult.name]);
+          const result = await execNpmCommand('install', [
+            _activityResult.name,
+          ]);
           console.log(result);
+          message.success({ content: '安装成功！' });
         } else {
           message.error('本地已安装');
         }
@@ -81,22 +84,30 @@ const TemplatePage: React.FC = () => {
         return ele;
       });
   };
-  const removeTemplate = (ele: Template) => {
+  const removeTemplate = (ele: CodeFaster.Template) => {
     if (ele.id)
       TemplateDatabase.templates
         .where('id')
         .equals(ele.id)
         .delete()
-        .then((deleteCount) => {
+        .then(async (deleteCount) => {
           setInstallDetail(undefined);
-          const result = execNpmCommand('uninstall', [ele.templateName]);
+          const result = await execNpmCommand('uninstall', [ele.templateName]);
           console.log(result);
+          message.success({ content: '删除成功！' });
           return deleteCount;
         })
         .catch((e) => {
           // eslint-disable-next-line no-console
           console.error(e.stack || e);
         });
+  };
+  const updateTemplate = async (ele: CodeFaster.Template) => {
+    const result = await execNpmCommand('install', [
+      `${ele.templateName}@latest`,
+    ]);
+    console.log(result);
+    message.success({ content: '更新成功！' });
   };
   const list = useLiveQuery(async () => {
     return TemplateDatabase.templates.toArray();
@@ -258,7 +269,7 @@ const TemplatePage: React.FC = () => {
               <List
                 itemLayout="horizontal"
                 dataSource={list}
-                renderItem={(item: Template) => (
+                renderItem={(item: CodeFaster.Template) => (
                   <List.Item
                     className={styles.listItemHover}
                     key={item.id}
@@ -298,13 +309,23 @@ const TemplatePage: React.FC = () => {
                   bordered
                   labelStyle={{ width: 95 }}
                   extra={
-                    <Button
-                      onClick={() => {
-                        removeTemplate(installDetail);
-                      }}
-                    >
-                      卸载
-                    </Button>
+                    <Space>
+                      <Button
+                        onClick={() => {
+                          updateTemplate(installDetail);
+                        }}
+                      >
+                        更新
+                      </Button>
+                      <Button
+                        onClick={() => {
+                          removeTemplate(installDetail);
+                          6;
+                        }}
+                      >
+                        卸载
+                      </Button>
+                    </Space>
                   }
                 >
                   <Descriptions.Item label="语法">
@@ -318,6 +339,9 @@ const TemplatePage: React.FC = () => {
                   </Descriptions.Item>
                   <Descriptions.Item label="仓库">
                     {installDetail?.url}
+                  </Descriptions.Item>
+                  <Descriptions.Item label="版本">
+                    {installDetail?.version}
                   </Descriptions.Item>
                 </Descriptions>
               )}
