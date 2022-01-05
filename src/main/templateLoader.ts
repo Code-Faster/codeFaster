@@ -8,7 +8,7 @@ import chalk from 'chalk';
 export const PLAYGROUND_PATH = path.resolve(
   process.env.NODE_ENV === 'development' || process.env.DEBUG_PROD === 'true'
     ? path.join(__dirname, '../../playground/')
-    : path.join(__dirname, '../../playground/')
+    : path.join(__dirname, '../../../../playground/')
 );
 
 export default class TemplateLoader {
@@ -25,7 +25,11 @@ export default class TemplateLoader {
   private list: string[] = [];
 
   constructor() {
-    console.log(chalk.green('模版加载器启动！'), PLAYGROUND_PATH);
+    console.log(
+      chalk.green('[模版加载器启动！]'),
+      process.env,
+      PLAYGROUND_PATH
+    );
     this.basePath = PLAYGROUND_PATH;
     this.modulesDir = path.join(PLAYGROUND_PATH, 'node_modules/');
     this.packagePath = path.join(PLAYGROUND_PATH, 'package.json');
