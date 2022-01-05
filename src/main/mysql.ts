@@ -3,7 +3,7 @@ import mysql, { Connection } from 'mysql';
 class MysqlOpt {
   public connection: Connection;
 
-  constructor(sqlConnction: SqlConnection) {
+  constructor(sqlConnction: CodeFaster.SqlConnection) {
     this.connection = mysql.createConnection(sqlConnction);
     this.connection.connect();
   }

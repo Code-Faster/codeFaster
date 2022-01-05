@@ -1,3 +1,5 @@
+import { message } from 'antd';
+
 /**
  * 选取文件夹
  * @returns directory url
@@ -36,11 +38,18 @@ export const execNpmCommand = async (
   cmd: string,
   modules: string[]
 ): Promise<void> => {
+  message.loading({
+    content: '正在执行..',
+    key: window.electron.channel.execCommand,
+    duration: 0,
+  });
   const arg = await window.electron.ipcRenderer.execInvokeTask(
     window.electron.channel.execCommand,
     cmd,
     modules
   );
+  message.destroy(window.electron.channel.execCommand);
+  console.log(arg);
   return arg;
 };
 
@@ -49,6 +58,11 @@ export const generatorCURD = async (
   project: CodeFaster.Project,
   values: CodeFaster.CURDForm
 ): Promise<number> => {
+  message.loading({
+    content: '正在执行..',
+    key: window.electron.channel.generatorCURD,
+    duration: 0,
+  });
   // 处理values pojo vo 实现 Table.java => Table
   const pojo = values.pojo.split('.')[0];
   values.pojo = pojo;
@@ -64,5 +78,6 @@ export const generatorCURD = async (
   if (result.code === 1) {
     throw Error(result.message);
   }
+  message.destroy(window.electron.channel.generatorCURD);
   return result.code;
 };

@@ -5,7 +5,11 @@ import resolve from 'resolve';
 import chalk from 'chalk';
 
 /** 模版所在目录 */
-export const PLAYGROUND_PATH = path.resolve(process.cwd(), 'playground');
+export const PLAYGROUND_PATH = path.resolve(
+  process.env.NODE_ENV === 'development' || process.env.DEBUG_PROD === 'true'
+    ? path.join(__dirname, '../../playground/')
+    : path.join(__dirname, '../../playground/')
+);
 
 export default class TemplateLoader {
   /** 模版基础目录 */
@@ -21,17 +25,13 @@ export default class TemplateLoader {
   private list: string[] = [];
 
   constructor() {
-    console.log(chalk.green('模版加载器启动！'));
+    console.log(chalk.green('模版加载器启动！'), PLAYGROUND_PATH);
     this.basePath = PLAYGROUND_PATH;
     this.modulesDir = path.join(PLAYGROUND_PATH, 'node_modules/');
     this.packagePath = path.join(PLAYGROUND_PATH, 'package.json');
   }
 
   init() {
-    if (!fs.existsSync(this.modulesDir)) {
-      // 如果模版文件夹不存在，返回false
-      throw Error('未加载模版！');
-    }
     const json = fs.readJSONSync(this.packagePath); // 读取package.json
     const deps = Object.keys(json.dependencies || {});
     const devDeps = Object.keys(json.devDependencies || {});

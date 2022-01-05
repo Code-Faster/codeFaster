@@ -320,7 +320,6 @@ const TemplatePage: React.FC = () => {
                       <Button
                         onClick={() => {
                           removeTemplate(installDetail);
-                          6;
                         }}
                       >
                         卸载

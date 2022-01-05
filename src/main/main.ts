@@ -14,10 +14,13 @@ import path from 'path';
 import { app, BrowserWindow, shell } from 'electron';
 import { autoUpdater } from 'electron-updater';
 import log from 'electron-log';
+import fixPath from 'fix-path';
 import MenuBuilder from './menu';
 import { resolveHtmlPath } from './util';
 import packageJson from '../../package.json';
 import IpcHandler from './ipcHandler';
+
+fixPath();
 
 export default class AppUpdater {
   constructor() {
@@ -81,7 +84,7 @@ const createWindow = async () => {
   });
 
   /** 启动ipcRenderer事件监控 */
-  new IpcHandler().init(mainWindow);
+  new IpcHandler().init();
   /**
    * 设置应用about
    */

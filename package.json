@@ -37,6 +37,7 @@
     "asarUnpack": "**\\*.{node,dll}",
     "files": [
       "dist",
+      "playground",
       "node_modules",
       "package.json"
     ],
@@ -74,6 +75,16 @@
         "nsis"
       ]
     },
+    "nsis": {
+      "oneClick": false,
+      "perMachine": true,
+      "allowElevation": true,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "runAfterFinish": true,
+      "installerIcon": "assets/icon.ico",
+      "uninstallerIcon": "assets/icon.ico"
+    },
     "linux": {
       "target": [
         "AppImage"
@@ -86,8 +97,16 @@
       "output": "release/build"
     },
     "extraResources": [
-      "./assets/**"
+      "./assets/**",
+      {
+        "from": "./playground/",
+        "to": "./app/playground",
+        "filter": [
+          "**/*"
+        ]
+      }
     ],
+    "extraFiles": [],
     "publish": {
       "provider": "github",
       "owner": "code-faster",
@@ -235,6 +254,7 @@
     "electron-debug": "^3.2.0",
     "electron-log": "^4.4.1",
     "electron-updater": "^4.6.1",
+    "fix-path": "3.0.0",
     "history": "4.x.x",
     "mysql": "^2.18.1",
     "rc-virtual-list": "^3.4.2",

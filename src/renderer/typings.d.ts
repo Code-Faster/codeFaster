@@ -89,6 +89,10 @@ declare namespace CodeFaster {
     tableCnName: string;
     /** 列名 */
     tableColArr: Array<{ [key: string]: any }>;
+
+    buildPath: string;
+    buildPathVo: string;
+    tableArr: Array<{ [key: string]: any }>;
   }
   export interface CURDForm {
     pojo: string;

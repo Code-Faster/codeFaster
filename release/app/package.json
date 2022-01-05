@@ -1,18 +1,17 @@
 {
-    "name": "code-faster",
-    "version": "0.0.1",
-    "description": "CodeFaster帮助开发者更快、更安全、更高效的实现业务代码",
-    "main": "./dist/main/main.js",
-    "author": {
-      "name": "Electron React Boilerplate Maintainers",
-      "email": "electronreactboilerplate@gmail.com",
-      "url": "https://github.com/electron-react-boilerplate"
-    },
-    "scripts": {
-      "electron-rebuild": "node -r ts-node/register ../../.erb/scripts/electron-rebuild.js",
-      "link-modules": "node -r ts-node/register ../../.erb/scripts/link-modules.ts",
-      "postinstall": "npm run electron-rebuild && npm run link-modules"
-    },
-    "license": "Apache-2.0"
-  }
-  
+  "name": "code-faster",
+  "version": "0.0.1",
+  "description": "CodeFaster帮助开发者更快、更安全、更高效的实现业务代码",
+  "main": "./dist/main/main.js",
+  "author": {
+    "name": "libiqi",
+    "email": "libiqi@diffshop.com",
+    "url": "https://github.com/CREATE-AI"
+  },
+  "scripts": {
+    "electron-rebuild": "node -r ts-node/register ../../.erb/scripts/electron-rebuild.js",
+    "link-modules": "node -r ts-node/register ../../.erb/scripts/link-modules.ts",
+    "postinstall": "npm run electron-rebuild && npm run link-modules"
+  },
+  "license": "Apache-2.0"
+}

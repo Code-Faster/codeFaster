@@ -1,9 +1,8 @@
 /* eslint-disable @typescript-eslint/no-shadow */
-import { spawn } from 'cross-spawn';
-import { app, BrowserWindow, dialog, ipcMain, shell } from 'electron';
+import { dialog, ipcMain, Notification } from 'electron';
 import fs from 'fs';
 import path from 'path';
-import chalk from 'chalk';
+import { spawn } from 'cross-spawn';
 import {
   openDialog,
   example,
@@ -17,6 +16,16 @@ import {
 import MysqlOpt from './mysql';
 import Template from './template';
 import TemplateLoader, { PLAYGROUND_PATH } from './templateLoader';
+
+/** 显示系统提示 */
+export const showMessage = (body: string, subtitle?: string) => {
+  const notification = new Notification({
+    title: '系统提示',
+    body,
+    subtitle,
+  });
+  notification.show();
+};
 
 const fileReader = (filePath: string): string => {
   const stats = fs.statSync(filePath);
@@ -35,7 +44,8 @@ const fileReader = (filePath: string): string => {
 const execCommandAction = (
   cmd: string,
   modules: string[],
-  templateSourcePath: string
+  where: string,
+  env: { [key: string]: string } = {}
 ): Promise<any> => {
   return new Promise((resolve: any, reject: any): void => {
     // spawn的命令行参数是以数组形式传入
@@ -45,7 +55,10 @@ const execCommandAction = (
       .concat(modules)
       .concat('--color=always')
       .concat('--save');
-    const npm = spawn('npm', args, { cwd: templateSourcePath }); // 执行npm，并通过 cwd指定执行的路径——配置文件所在文件夹
+    const npm = spawn('npm', args, {
+      cwd: where,
+      env: { ...process.env, ...env },
+    }); // 执行npm，并通过 cwd指定执行的路径——配置文件所在文件夹
     let output = '';
     npm.stdout
       .on('data', (data: string) => {
@@ -64,8 +77,11 @@ const execCommandAction = (
         resolve({ code: 0, data: output }); // 如果没有报错就输出正常日志
       } else {
         // eslint-disable-next-line prefer-promise-reject-errors
-        reject({ code, data: output }); // 如果报错就输出报错日志
+        reject({ code: 1, data: output }); // 如果报错就输出报错日志
       }
+    });
+    npm.on('error', (err: Error) => {
+      throw err;
     });
   });
 };
@@ -81,7 +97,7 @@ export default class ipcHandler {
     this.templateLoader = new TemplateLoader().init();
   }
 
-  init(win: BrowserWindow) {
+  init() {
     // 执行通信模块
     ipcMain.on(example, async (event, _arg) => {
       const msgTemplate = (pingPong: string) => `IPC test: ${pingPong}`;
@@ -176,8 +192,9 @@ export default class ipcHandler {
     ipcMain.handle(
       execCommand,
       async (_event, cmd: string, modules: string[]) => {
-        console.log(chalk.green(`PLAYGROUND_PATH == ${PLAYGROUND_PATH}`));
-        return execCommandAction(cmd, modules, PLAYGROUND_PATH);
+        const result = await execCommandAction(cmd, modules, PLAYGROUND_PATH);
+        showMessage('命令执行成功');
+        return result;
       }
     );
 
