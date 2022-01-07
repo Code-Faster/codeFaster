@@ -8,6 +8,7 @@ const {
   initProject,
   execCommand,
   generatorCURD,
+  getLoggerList,
 } = require('./channelList');
 
 contextBridge.exposeInMainWorld('electron', {
@@ -47,5 +48,6 @@ contextBridge.exposeInMainWorld('electron', {
     initProject,
     execCommand,
     generatorCURD,
+    getLoggerList,
   },
 });

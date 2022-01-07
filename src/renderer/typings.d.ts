@@ -80,21 +80,40 @@ declare namespace Npm {
 
 declare namespace CodeFaster {
   /**
-   * 模型生成器
+   * 表SQL列对象
    */
-  export interface Model {
-    /** 表名 */
+  interface SqlColumn {
+    columnComment: string;
+    columnType: string;
+    columnName: string;
+  }
+  /**
+   * 表结构与pojo的双向json化
+   */
+  interface SqlTable {
+    // 库名
+    dbName: string;
+    // 表名
     tableName: string;
-    /** 表注释 */
-    tableCnName: string;
-    /** 列名 */
-    tableColArr: Array<{ [key: string]: any }>;
-
+    // 注释
+    tableComment: string;
+    // 表单字段数组
+    tableCloums: SqlColumn[];
+    // 表执行创建SQL
+    tableSql: string;
+  }
+  /**
+   * 生成模型的表单数据
+   */
+  interface ModelForm {
     buildPath: string;
     buildPathVo: string;
-    tableArr: Array<{ [key: string]: any }>;
+    tableArray: SqlTable[];
   }
-  export interface CURDForm {
+  /**
+   * curd 的表单数据
+   */
+  interface CURDForm {
     pojo: string;
     vo: string;
     pojoPath: string;
@@ -129,6 +148,9 @@ declare namespace CodeFaster {
     defaultVoPath?: string;
     defaultServicePath?: string;
     defaultServiceImplPath?: string;
+    defaultControllerPath?: string;
+    defaultMapperPath?: string;
+    defaultUnitTestPath?: string;
   }
 
   /** 模版表 */
@@ -180,7 +202,7 @@ declare namespace CodeFaster {
     fileName: string;
     path: string;
     fromPath?: string;
-    formData?: CodeFaster.Model;
+    formData?: CodeFaster.SqlTable;
     // false 文件 true 文件夹
     isDir: boolean;
     children: Array<FileObj>;
@@ -194,12 +216,18 @@ declare namespace CodeFaster {
     props: { [key: string]: any };
     /** 输出地址 */
     releasePath: string;
-    model?: Model;
+    model?: SqlTable;
   };
-
+  /**
+   * 代码生成器
+   */
   interface CodeGenerator {
     init: (params: CodeFaster.Params) => void;
-
+  }
+  /**
+   * Java生成器
+   */
+  interface JavaCodeGenerator extends CodeGenerator {
     generatorPojo: (params: CodeFaster.Params) => void;
 
     generatorVO: (params: CodeFaster.Params) => void;
@@ -214,11 +242,11 @@ declare namespace CodeFaster {
 
     generatorUnitTest: (params: CodeFaster.Params) => void;
 
-    getModelByPojoPath: (filePath: string) => CodeFaster.Model;
+    getModelByPojoPath: (filePath: string) => CodeFaster.SqlTable;
   }
 
   /**
-   * 结构类
+   * 返回结果结构类
    */
   type Result<T> = {
     /** 0、 成功 1、失败 */

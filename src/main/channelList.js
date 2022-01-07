@@ -16,6 +16,8 @@ const execCommand = 'execCommand';
 const generatorCURD = 'generatorCURD';
 /** 生成CURD */
 const getModelByPojoPath = 'getModelByPojoPath';
+/** 获取日志 */
+const getLoggerList = 'getLoggerList';
 module.exports = {
   openDialog,
   example,
@@ -26,4 +28,5 @@ module.exports = {
   execCommand,
   generatorCURD,
   getModelByPojoPath,
+  getLoggerList,
 };

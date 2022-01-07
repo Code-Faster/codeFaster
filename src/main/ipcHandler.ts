@@ -2,7 +2,6 @@
 import { dialog, ipcMain, Notification } from 'electron';
 import fs from 'fs';
 import path from 'path';
-import { spawn } from 'cross-spawn';
 import {
   openDialog,
   example,
@@ -12,10 +11,11 @@ import {
   initProject,
   execCommand,
   generatorCURD,
+  getLoggerList,
 } from './channelList';
-import MysqlOpt from './mysql';
-import Template from './template';
-import TemplateLoader, { PLAYGROUND_PATH } from './templateLoader';
+import TemplateLoader, { PLAYGROUND_PATH } from './util/templateLoader';
+import util from './util';
+import parser from './util/parser';
 
 /** 显示系统提示 */
 export const showMessage = (body: string, subtitle?: string) => {
@@ -26,7 +26,6 @@ export const showMessage = (body: string, subtitle?: string) => {
   });
   notification.show();
 };
-
 const fileReader = (filePath: string): string => {
   const stats = fs.statSync(filePath);
   if (stats.isFile()) {
@@ -34,57 +33,7 @@ const fileReader = (filePath: string): string => {
   }
   throw new Error('传入的参数必须为文件地址');
 };
-/**
- *
- * @param cmd install / update /remove
- * @param modules []
- * @param templateSourcePath
- * @returns
- */
-const execCommandAction = (
-  cmd: string,
-  modules: string[],
-  where: string,
-  env: { [key: string]: string } = {}
-): Promise<any> => {
-  return new Promise((resolve: any, reject: any): void => {
-    // spawn的命令行参数是以数组形式传入
-    // 此处将命令和要安装的插件以数组的形式拼接起来
-    // 此处的cmd指的是执行的命令，比如install\uninstall\update
-    const args = [cmd]
-      .concat(modules)
-      .concat('--color=always')
-      .concat('--save');
-    const npm = spawn('npm', args, {
-      cwd: where,
-      env: { ...process.env, ...env },
-    }); // 执行npm，并通过 cwd指定执行的路径——配置文件所在文件夹
-    let output = '';
-    npm.stdout
-      .on('data', (data: string) => {
-        output += data; // 获取输出日志
-      })
-      .pipe(process.stdout);
 
-    npm.stderr
-      .on('data', (data: string) => {
-        output += data; // 获取报错日志
-      })
-      .pipe(process.stderr);
-
-    npm.on('close', (code: number) => {
-      if (!code) {
-        resolve({ code: 0, data: output }); // 如果没有报错就输出正常日志
-      } else {
-        // eslint-disable-next-line prefer-promise-reject-errors
-        reject({ code: 1, data: output }); // 如果报错就输出报错日志
-      }
-    });
-    npm.on('error', (err: Error) => {
-      throw err;
-    });
-  });
-};
 /**
  * 与preload.js 事件相对应
  */
@@ -95,15 +44,34 @@ export default class ipcHandler {
   constructor() {
     // 执行模版加载器
     this.templateLoader = new TemplateLoader().init();
+    util.Logger.success('事件通信启动！');
   }
 
   init() {
     // 执行通信模块
-    ipcMain.on(example, async (event, _arg) => {
+    ipcMain.on(example, async (event) => {
       const msgTemplate = (pingPong: string) => `IPC test: ${pingPong}`;
       event.reply(example, msgTemplate('pong'));
     });
 
+    // 获取执行日志
+    ipcMain.handle(getLoggerList, async () => {
+      return util.Logger.loglist;
+    });
+
+    /**
+     * 执行npm命令
+     */
+    ipcMain.handle(
+      execCommand,
+      async (_event, cmd: string, modules: string[]) => {
+        util.Logger.info(`PLAYGROUND_PATH=${PLAYGROUND_PATH}`);
+        util.Logger.info(`npm ${cmd} ${modules.toString()}`);
+        const result = await util.execCommand(cmd, modules, PLAYGROUND_PATH);
+        showMessage('命令执行成功');
+        return result;
+      }
+    );
     /**
      * 选择文件/文件夹对话框, 不允许多选
      */
@@ -145,12 +113,23 @@ export default class ipcHandler {
       return fileReader(arg);
     });
 
+    /**
+     * 执行SQL链接
+     */
     ipcMain.handle(
       initMysql,
-      async (_event, args: CodeFaster.SqlConnection, sqlStr: string) => {
-        const c = new MysqlOpt(args);
-        const result = await c.query(sqlStr);
-        return result;
+      async (
+        _event,
+        db: CodeFaster.SqlConnection
+      ): Promise<CodeFaster.SqlTable[]> => {
+        const c = new util.Mysql(db);
+        const data = await c.query(
+          `select table_name,table_comment from information_schema.tables where table_schema='${db.database}'`
+        );
+        const sql = await c.query(
+          `select TABLE_SCHEMA ,TABLE_NAME,COLUMN_NAME,ORDINAL_POSITION,COLUMN_DEFAULT,IS_NULLABLE,DATA_TYPE,CHARACTER_MAXIMUM_LENGTH,NUMERIC_PRECISION,NUMERIC_SCALE,COLUMN_TYPE,COLUMN_KEY 'KEY',EXTRA,COLUMN_COMMENT from information_schema.COLUMNS where table_schema='${db.database}' ORDER BY TABLE_NAME, ORDINAL_POSITION`
+        );
+        return parser.mySqlParser(db.database, data, sql);
       }
     );
     /**
@@ -158,17 +137,26 @@ export default class ipcHandler {
      */
     ipcMain.handle(
       initProject,
-      async (_event, _templateName: string, project: CodeFaster.Project) => {
-        const GeneratorFactory = this.templateLoader.getPlugin(_templateName);
-        const codeGenerator: CodeFaster.CodeGenerator = new GeneratorFactory(
-          project
-        );
-        codeGenerator.init({
-          /** 其他参数 */
-          props: {},
-          /** 输出地址 */
-          releasePath: project.projectDir,
-        });
+      async (
+        _event,
+        _templateName: string,
+        project: CodeFaster.Project
+      ): Promise<CodeFaster.Result<string>> => {
+        try {
+          const GeneratorFactory = this.templateLoader.getPlugin(_templateName);
+          const codeGenerator: CodeFaster.JavaCodeGenerator =
+            new GeneratorFactory(project);
+          codeGenerator.init({
+            /** 其他参数 */
+            props: {},
+            /** 输出地址 */
+            releasePath: project.projectDir,
+          });
+          util.Logger.success('初始化项目执行成功');
+          return { code: 0 };
+        } catch (error: any) {
+          return { code: 1, message: error.stack || error.message };
+        }
       }
     );
     /**
@@ -178,23 +166,37 @@ export default class ipcHandler {
       createModel,
       async (
         _event,
-        model: CodeFaster.Model,
-        project: CodeFaster.Project
+        _templateName,
+        project: CodeFaster.Project,
+        model: CodeFaster.ModelForm
       ): Promise<CodeFaster.Result<string>> => {
-        const template = new Template(project);
-        template.generatorPOJO(model);
-        return { code: 0 };
-      }
-    );
-    /**
-     * 执行npm命令
-     */
-    ipcMain.handle(
-      execCommand,
-      async (_event, cmd: string, modules: string[]) => {
-        const result = await execCommandAction(cmd, modules, PLAYGROUND_PATH);
-        showMessage('命令执行成功');
-        return result;
+        try {
+          const GeneratorFactory = this.templateLoader.getPlugin(_templateName);
+          const codeGenerator: CodeFaster.JavaCodeGenerator =
+            new GeneratorFactory(project);
+          model.tableArray.forEach((ele: CodeFaster.SqlTable) => {
+            codeGenerator.generatorPojo({
+              /** 其他参数 */
+              props: {},
+              /** 输出地址 */
+              releasePath: model.buildPath,
+              model: ele,
+            });
+            util.Logger.success(`${ele.tableName} - generatorPojo执行成功`);
+            codeGenerator.generatorVO({
+              /** 其他参数 */
+              props: {},
+              /** 输出地址 */
+              releasePath: model.buildPathVo,
+              model: ele,
+            });
+            util.Logger.success(`${ele.tableName} - generatorVO执行成功`);
+          });
+
+          return { code: 0 };
+        } catch (error: any) {
+          return { code: 1, message: error.stack || error.message };
+        }
       }
     );
 
@@ -211,9 +213,8 @@ export default class ipcHandler {
       ): Promise<CodeFaster.Result<string>> => {
         try {
           const GeneratorFactory = this.templateLoader.getPlugin(_templateName);
-          const codeGenerator: CodeFaster.CodeGenerator = new GeneratorFactory(
-            project
-          );
+          const codeGenerator: CodeFaster.JavaCodeGenerator =
+            new GeneratorFactory(project);
           const pojoJSON = codeGenerator.getModelByPojoPath(params.pojoPath);
           codeGenerator.generatorService({
             /** 其他参数 */
@@ -222,6 +223,7 @@ export default class ipcHandler {
             releasePath: params.servicePath,
             model: pojoJSON,
           });
+          util.Logger.success('generatorService执行成功');
           codeGenerator.generatorServiceImpl({
             /** 其他参数 */
             props: params,
@@ -229,6 +231,7 @@ export default class ipcHandler {
             releasePath: params.serviceImplPath,
             model: pojoJSON,
           });
+          util.Logger.success('generatorServiceImpl执行成功');
           codeGenerator.generatorController({
             /** 其他参数 */
             props: params,
@@ -236,6 +239,7 @@ export default class ipcHandler {
             releasePath: params.controllerPath,
             model: pojoJSON,
           });
+          util.Logger.success('generatorController执行成功');
           codeGenerator.generatorMapper({
             /** 其他参数 */
             props: params,
@@ -243,6 +247,7 @@ export default class ipcHandler {
             releasePath: params.mapperPath,
             model: pojoJSON,
           });
+          util.Logger.success('generatorMapper执行成功');
           codeGenerator.generatorUnitTest({
             /** 其他参数 */
             props: params,
@@ -250,6 +255,7 @@ export default class ipcHandler {
             releasePath: params.unitTestPath,
             model: pojoJSON,
           });
+          util.Logger.success('generatorUnitTest执行成功');
           return { code: 0 };
         } catch (error: any) {
           return { code: 1, message: error.stack || error.message };

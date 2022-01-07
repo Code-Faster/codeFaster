@@ -15,8 +15,8 @@ import { app, BrowserWindow, shell } from 'electron';
 import { autoUpdater } from 'electron-updater';
 import log from 'electron-log';
 import fixPath from 'fix-path';
+import util from './util';
 import MenuBuilder from './menu';
-import { resolveHtmlPath } from './util';
 import packageJson from '../../package.json';
 import IpcHandler from './ipcHandler';
 
@@ -96,7 +96,7 @@ const createWindow = async () => {
     copyright: `Copyright © 2021 ${packageJson.name}.`,
   });
 
-  mainWindow.loadURL(resolveHtmlPath('index.html'));
+  mainWindow.loadURL(util.resolveHtmlPath('index.html'));
 
   mainWindow.on('ready-to-show', () => {
     if (!mainWindow) {

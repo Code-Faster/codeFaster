@@ -16,24 +16,18 @@ export const openDialog = async (
   }
   return result.data;
 };
-export const createModel = async (
-  model: CodeFaster.Model,
-  project: CodeFaster.Project
-): Promise<void> => {
-  await window.electron.ipcRenderer.execInvokeTask(
-    window.electron.channel.createModel,
-    model,
-    project
-  );
+/** 创建mysql链接 */
+export const createMysqlConnection = async (
+  db: CodeFaster.SqlConnection
+): Promise<CodeFaster.SqlTable[]> => {
+  const arg: CodeFaster.SqlTable[] =
+    await window.electron.ipcRenderer.execInvokeTask(
+      window.electron.channel.initMysql,
+      db
+    );
+  return arg;
 };
-export const initProject = async (
-  project: CodeFaster.Project
-): Promise<void> => {
-  await window.electron.ipcRenderer.execInvokeTask(
-    window.electron.channel.initProject,
-    project
-  );
-};
+
 export const execNpmCommand = async (
   cmd: string,
   modules: string[]
@@ -49,10 +43,31 @@ export const execNpmCommand = async (
     modules
   );
   message.destroy(window.electron.channel.execCommand);
-  console.log(arg);
   return arg;
 };
 
+export const createModel = async (
+  templateName: string,
+  project: CodeFaster.Project,
+  model: CodeFaster.ModelForm
+): Promise<void> => {
+  await window.electron.ipcRenderer.execInvokeTask(
+    window.electron.channel.createModel,
+    templateName,
+    project,
+    model
+  );
+};
+export const initProject = async (
+  templateName: string,
+  project: CodeFaster.Project
+): Promise<void> => {
+  await window.electron.ipcRenderer.execInvokeTask(
+    window.electron.channel.initProject,
+    templateName,
+    project
+  );
+};
 export const generatorCURD = async (
   templateName: string,
   project: CodeFaster.Project,

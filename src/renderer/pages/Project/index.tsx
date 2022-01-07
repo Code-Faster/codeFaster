@@ -27,10 +27,10 @@ import {
 import { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { TableRowSelection } from 'antd/lib/table/interface';
-import DbOpts from '../../util/dbOpts';
 import db from '../../dbModel';
 import DescriptionItem from '../../components/Description';
 import {
+  createMysqlConnection,
   initProject,
   createModel,
   openDialog,
@@ -54,8 +54,8 @@ const ProjectPage: React.FC = () => {
     CodeFaster.SqlConnection[]
   >([]);
   const [selectedRowKeys, setSelectedRowKeys] = useState<React.Key[]>([]);
-  const [tableArr, setTableArr] = useState<[]>([]);
-  const [sqlList, setSqlList] = useState<[]>([]);
+  const [tableArr, setTableArr] = useState<CodeFaster.SqlTable[]>([]);
+  const [sqlList, setSqlList] = useState<CodeFaster.SqlTable[]>([]);
   const [createSqlModal, setCreateSqlModal] = useState<boolean>(false);
   const [templateList, setTemplateList] = useState<CodeFaster.Template[]>();
   const params = useParams();
@@ -96,11 +96,14 @@ const ProjectPage: React.FC = () => {
       });
   };
 
-  const onSelectChange = (_selectedKeys: React.Key[], selectedRows: any) => {
+  const onSelectChange = (
+    _selectedKeys: React.Key[],
+    selectedRows: CodeFaster.SqlTable[]
+  ) => {
     setSelectedRowKeys(_selectedKeys);
     setTableArr(selectedRows);
   };
-  const rowSelection: TableRowSelection<any> = {
+  const rowSelection: TableRowSelection<CodeFaster.SqlTable> = {
     selectedRowKeys,
     onChange: onSelectChange,
     selections: [
@@ -464,6 +467,109 @@ const ProjectPage: React.FC = () => {
             <Row gutter={16}>
               <Col span={24}>
                 <Form.Item
+                  name="defaultControllerPath"
+                  label="Controller默认目录"
+                  rules={[
+                    { required: true, message: '请选择Controller默认目录' },
+                  ]}
+                >
+                  <Input
+                    style={{ width: 'calc(100%)' }}
+                    placeholder="请选择Controller默认目录"
+                    addonAfter={
+                      <Form.Item noStyle>
+                        <Button
+                          type="link"
+                          icon={<FolderOpenOutlined />}
+                          style={{ height: 24 }}
+                          onClick={async () => {
+                            basicForm.setFieldsValue({
+                              defaultControllerPath: (
+                                await openDialog({
+                                  defaultPath: project.projectDir,
+                                  properties: ['openDirectory'],
+                                })
+                              ).path,
+                            });
+                          }}
+                        />
+                      </Form.Item>
+                    }
+                  />
+                </Form.Item>
+              </Col>
+            </Row>
+            <Row gutter={16}>
+              <Col span={24}>
+                <Form.Item
+                  name="defaultMapperPath"
+                  label="Mapper默认目录"
+                  rules={[{ required: true, message: '请选择Mapper默认目录' }]}
+                >
+                  <Input
+                    style={{ width: 'calc(100%)' }}
+                    placeholder="请选择Mapper默认目录"
+                    addonAfter={
+                      <Form.Item noStyle>
+                        <Button
+                          type="link"
+                          icon={<FolderOpenOutlined />}
+                          style={{ height: 24 }}
+                          onClick={async () => {
+                            basicForm.setFieldsValue({
+                              defaultMapperPath: (
+                                await openDialog({
+                                  defaultPath: project.projectDir,
+                                  properties: ['openDirectory'],
+                                })
+                              ).path,
+                            });
+                          }}
+                        />
+                      </Form.Item>
+                    }
+                  />
+                </Form.Item>
+              </Col>
+            </Row>
+            <Row gutter={16}>
+              <Col span={24}>
+                <Form.Item
+                  name="defaultUnitTestPath"
+                  label="unitTest默认目录"
+                  rules={[
+                    { required: true, message: '请选择unitTest默认目录' },
+                  ]}
+                >
+                  <Input
+                    style={{ width: 'calc(100%)' }}
+                    placeholder="请选择unitTest默认目录"
+                    addonAfter={
+                      <Form.Item noStyle>
+                        <Button
+                          type="link"
+                          icon={<FolderOpenOutlined />}
+                          style={{ height: 24 }}
+                          onClick={async () => {
+                            basicForm.setFieldsValue({
+                              defaultUnitTestPath: (
+                                await openDialog({
+                                  defaultPath: project.projectDir,
+                                  properties: ['openDirectory'],
+                                })
+                              ).path,
+                            });
+                          }}
+                        />
+                      </Form.Item>
+                    }
+                  />
+                </Form.Item>
+              </Col>
+            </Row>
+            <Row gutter={16}>
+              <Col span={24}>
+                <Form.Item
                   name="description"
                   label="简介"
                   rules={[
@@ -501,13 +607,24 @@ const ProjectPage: React.FC = () => {
           <Form
             layout="vertical"
             form={modelForm}
-            onFinish={(values: CodeFaster.Model) => {
+            onFinish={async (values: CodeFaster.ModelForm) => {
               if (tableArr.length === 0) {
                 message.error({ content: '请至少选择一个表！' });
               }
-              values.tableColArr = tableArr;
-              createModel(values, project);
-              message.success({ content: '生成成功！' });
+              values.tableArray = tableArr;
+              const template: CodeFaster.Template = await db.templates.get({
+                id: project.templateId,
+              });
+              if (template?.templateName) {
+                createModel(template?.templateName, project, values)
+                  .then((data) => {
+                    message.success({ content: '执行成功！' });
+                    return data;
+                  })
+                  .catch((e) => {
+                    throw Error(e.stack || e);
+                  });
+              }
               // 重置选择的表
               setSelectedRowKeys([]);
               setTableArr([]);
@@ -564,7 +681,7 @@ const ProjectPage: React.FC = () => {
                           }
                           style={{ width: '300px' }}
                           onClick={async () => {
-                            const json = await DbOpts.createMysqlConnection(
+                            const json = await createMysqlConnection(
                               sqlConnections[index]
                             );
                             setSqlList(json);
@@ -600,7 +717,7 @@ const ProjectPage: React.FC = () => {
                 <Table
                   rowSelection={rowSelection}
                   rowKey={(record) => record.tableName}
-                  expandedRowRender={(record) => <p>{record.sql}</p>}
+                  expandedRowRender={(record) => <p>{record.tableSql}</p>}
                   columns={[
                     {
                       title: '库名',
@@ -916,7 +1033,7 @@ const ProjectPage: React.FC = () => {
                             CURDForm.setFieldsValue({
                               controllerPath: (
                                 await openDialog({
-                                  defaultPath: project.projectDir,
+                                  defaultPath: project.defaultControllerPath,
                                   properties: ['openDirectory'],
                                 })
                               ).path,
@@ -950,7 +1067,7 @@ const ProjectPage: React.FC = () => {
                             CURDForm.setFieldsValue({
                               mapperPath: (
                                 await openDialog({
-                                  defaultPath: project.projectDir,
+                                  defaultPath: project.defaultMapperPath,
                                   properties: ['openDirectory'],
                                 })
                               ).path,
@@ -986,7 +1103,7 @@ const ProjectPage: React.FC = () => {
                             CURDForm.setFieldsValue({
                               unitTestPath: (
                                 await openDialog({
-                                  defaultPath: project.projectDir,
+                                  defaultPath: project.defaultUnitTestPath,
                                   properties: ['openDirectory'],
                                 })
                               ).path,

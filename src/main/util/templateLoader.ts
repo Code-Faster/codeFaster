@@ -2,12 +2,12 @@
 import path from 'path';
 import fs from 'fs-extra';
 import resolve from 'resolve';
-import chalk from 'chalk';
+import util from '.';
 
 /** 模版所在目录 */
 export const PLAYGROUND_PATH = path.resolve(
   process.env.NODE_ENV === 'development' || process.env.DEBUG_PROD === 'true'
-    ? path.join(__dirname, '../../playground/')
+    ? path.join(__dirname, '../../../playground/')
     : path.join(__dirname, '../../../../playground/')
 );
 
@@ -25,14 +25,12 @@ export default class TemplateLoader {
   private list: string[] = [];
 
   constructor() {
-    console.log(
-      chalk.green('[模版加载器启动！]'),
-      process.env,
-      PLAYGROUND_PATH
-    );
     this.basePath = PLAYGROUND_PATH;
     this.modulesDir = path.join(PLAYGROUND_PATH, 'node_modules/');
     this.packagePath = path.join(PLAYGROUND_PATH, 'package.json');
+    util.Logger.success('模版加载器启动！');
+    util.Logger.info(`__dirname=${__dirname}`);
+    util.Logger.info(`PLAYGROUND_PATH=${PLAYGROUND_PATH}`);
   }
 
   init() {

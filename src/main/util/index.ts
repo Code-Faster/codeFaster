@@ -1,8 +1,11 @@
 /* eslint import/prefer-default-export: off, import/no-mutable-exports: off */
 import { URL } from 'url';
 import path from 'path';
+import Logger from './logger';
+import execCommand from './command';
+import Mysql from './mysql';
 
-export let resolveHtmlPath: (htmlFileName: string) => string;
+let resolveHtmlPath: (htmlFileName: string) => string;
 
 if (process.env.NODE_ENV === 'development') {
   const port = process.env.PORT || 1212;
@@ -16,3 +19,10 @@ if (process.env.NODE_ENV === 'development') {
     return `file://${path.resolve(__dirname, '../renderer/', htmlFileName)}`;
   };
 }
+
+export default {
+  Logger,
+  resolveHtmlPath,
+  execCommand,
+  Mysql,
+};
