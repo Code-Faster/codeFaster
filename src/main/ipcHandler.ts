@@ -12,6 +12,9 @@ import {
   execCommand,
   generatorCURD,
   getLoggerList,
+  getNodePath,
+  updateProjectConfig,
+  buildModelJson,
 } from './channelList';
 import TemplateLoader, { PLAYGROUND_PATH } from './util/templateLoader';
 import util from './util';
@@ -26,6 +29,7 @@ export const showMessage = (body: string, subtitle?: string) => {
   });
   notification.show();
 };
+/** 读取文件 */
 const fileReader = (filePath: string): string => {
   const stats = fs.statSync(filePath);
   if (stats.isFile()) {
@@ -33,10 +37,29 @@ const fileReader = (filePath: string): string => {
   }
   throw new Error('传入的参数必须为文件地址');
 };
-
 /**
- * 与preload.js 事件相对应
+ * 根据 _ 生成驼峰 , type 默认true,如果没有 _ 分隔符 , 则取第一个大写
+ * @param {*} str
  */
+export const tranformHumpStr = (str: string, type = true) => {
+  if (str.length === 0) {
+    return '';
+  }
+  if (str.indexOf('_') >= 0) {
+    let strArr = str.split('_');
+    strArr = strArr.map((ele, index) => {
+      return index === 0
+        ? ele.charAt(0).toLowerCase() + ele.substring(1).toLowerCase()
+        : ele.charAt(0).toUpperCase() + ele.substring(1).toLowerCase();
+    });
+    const result = strArr.join('');
+    return type ? result : result.charAt(0).toLowerCase() + result.substring(1);
+  }
+  return type
+    ? str.charAt(0).toLowerCase() + str.substring(1).toLowerCase()
+    : str;
+};
+/** 与preload.js 事件相对应 */
 // eslint-disable-next-line @typescript-eslint/naming-convention
 export default class ipcHandler {
   private templateLoader: TemplateLoader;
@@ -53,7 +76,6 @@ export default class ipcHandler {
       const msgTemplate = (pingPong: string) => `IPC test: ${pingPong}`;
       event.reply(example, msgTemplate('pong'));
     });
-
     // 获取执行日志
     ipcMain.handle(getLoggerList, async () => {
       return util.Logger.loglist;
@@ -109,13 +131,33 @@ export default class ipcHandler {
      * 根据文件地址读取文件
      * @param filePath
      */
-    ipcMain.handle(readFile, async (_event, arg: string) => {
-      return fileReader(arg);
+    ipcMain.handle(readFile, async (_event, arg: string): Promise<string> => {
+      const result = fileReader(arg);
+      util.Logger.success(`open ${arg} success`);
+      return result;
     });
-
     /**
-     * 执行SQL链接
+     * 根据参数获取node path.basename path.dirname path.extname path.join path.normalize path.resolve 的结果
      */
+    ipcMain.handle(
+      getNodePath,
+      async (
+        _event,
+        cmd:
+          | 'basename'
+          | 'dirname'
+          | 'extname'
+          | 'join'
+          | 'normalize'
+          | 'resolve',
+        ...args
+      ): Promise<string> => {
+        util.Logger.success(`node.${cmd}(${args.join('  ')}) success`);
+        if (cmd === 'join' || cmd === 'resolve')
+          return path[cmd](...(args as [string, string]));
+        return path[cmd](...(args as [string]));
+      }
+    );
     ipcMain.handle(
       initMysql,
       async (
@@ -139,11 +181,12 @@ export default class ipcHandler {
       initProject,
       async (
         _event,
-        _templateName: string,
         project: CodeFaster.Project
       ): Promise<CodeFaster.Result<string>> => {
         try {
-          const GeneratorFactory = this.templateLoader.getPlugin(_templateName);
+          const GeneratorFactory = this.templateLoader.getPlugin(
+            project.templateName
+          );
           const codeGenerator: CodeFaster.JavaCodeGenerator =
             new GeneratorFactory(project);
           codeGenerator.init({
@@ -166,12 +209,13 @@ export default class ipcHandler {
       createModel,
       async (
         _event,
-        _templateName,
         project: CodeFaster.Project,
         model: CodeFaster.ModelForm
       ): Promise<CodeFaster.Result<string>> => {
         try {
-          const GeneratorFactory = this.templateLoader.getPlugin(_templateName);
+          const GeneratorFactory = this.templateLoader.getPlugin(
+            project.templateName
+          );
           const codeGenerator: CodeFaster.JavaCodeGenerator =
             new GeneratorFactory(project);
           model.tableArray.forEach((ele: CodeFaster.SqlTable) => {
@@ -207,12 +251,13 @@ export default class ipcHandler {
       generatorCURD,
       async (
         _event,
-        _templateName: string,
         project: CodeFaster.Project,
         params: CodeFaster.CURDForm
       ): Promise<CodeFaster.Result<string>> => {
         try {
-          const GeneratorFactory = this.templateLoader.getPlugin(_templateName);
+          const GeneratorFactory = this.templateLoader.getPlugin(
+            project.templateName
+          );
           const codeGenerator: CodeFaster.JavaCodeGenerator =
             new GeneratorFactory(project);
           const pojoJSON = codeGenerator.getModelByPojoPath(params.pojoPath);
@@ -256,6 +301,63 @@ export default class ipcHandler {
             model: pojoJSON,
           });
           util.Logger.success('generatorUnitTest执行成功');
+          return { code: 0 };
+        } catch (error: any) {
+          return { code: 1, message: error.stack || error.message };
+        }
+      }
+    );
+    /**  */
+    ipcMain.handle(
+      updateProjectConfig,
+      async (
+        _event,
+        project: CodeFaster.Project
+      ): Promise<CodeFaster.Result<string>> => {
+        const GeneratorFactory = this.templateLoader.getPlugin(
+          project.templateName
+        );
+        const codeGenerator: CodeFaster.JavaCodeGenerator =
+          new GeneratorFactory(project);
+        codeGenerator.updateProjectConfig();
+        util.Logger.success(
+          `project ${project.projectName} updateProjectConfig success`
+        );
+        return { code: 0 };
+      }
+    );
+
+    ipcMain.handle(
+      buildModelJson,
+      async (
+        _event,
+        model: CodeFaster.ModelForm
+      ): Promise<CodeFaster.Result<string>> => {
+        try {
+          if (model.buildJsonPath !== undefined) {
+            if (fs.existsSync(model.buildJsonPath)) {
+              model.tableArray.forEach((ele: CodeFaster.SqlTable) => {
+                ele.tableCloums.map((e) => {
+                  e.columnName = tranformHumpStr(e.columnName);
+                  return e;
+                });
+                const release = path.join(
+                  // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+                  model.buildJsonPath!,
+                  `${ele.tableName}.model.json`
+                );
+                fs.writeFileSync(release, JSON.stringify(ele), 'utf-8');
+                return ele;
+              });
+            } else {
+              return { code: 1, message: '输出地址不存在' };
+            }
+          } else {
+            return { code: 1, message: 'buildJsonPath 不能为空!' };
+          }
+          util.Logger.success(
+            `${model.buildJsonPath} - buildModelJson执行成功`
+          );
           return { code: 0 };
         } catch (error: any) {
           return { code: 1, message: error.stack || error.message };

@@ -1,30 +1,17 @@
 const { contextBridge, ipcRenderer } = require('electron');
-const {
-  openDialog,
-  example,
-  readFile,
-  initMysql,
-  createModel,
-  initProject,
-  execCommand,
-  generatorCURD,
-  getLoggerList,
-} = require('./channelList');
+const list = require('./channelList');
 
 contextBridge.exposeInMainWorld('electron', {
   ipcRenderer: {
-    myPing() {
-      ipcRenderer.send(example, 'ping');
-    },
     on(channel, func) {
-      const validChannels = [example];
+      const validChannels = [...list];
       if (validChannels.includes(channel)) {
         // Deliberately strip event as it includes `sender`
         ipcRenderer.on(channel, (event, ...args) => func(...args));
       }
     },
     once(channel, func) {
-      const validChannels = [example];
+      const validChannels = [...list];
       if (validChannels.includes(channel)) {
         // Deliberately strip event as it includes `sender`
         ipcRenderer.once(channel, (event, ...args) => func(...args));
@@ -38,16 +25,6 @@ contextBridge.exposeInMainWorld('electron', {
     },
   },
   channel: {
-    /**
-     * 打开文件系统
-     */
-    openDialog,
-    readFile,
-    initMysql,
-    createModel,
-    initProject,
-    execCommand,
-    generatorCURD,
-    getLoggerList,
+    ...list,
   },
 });

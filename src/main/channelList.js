@@ -18,6 +18,12 @@ const generatorCURD = 'generatorCURD';
 const getModelByPojoPath = 'getModelByPojoPath';
 /** 获取日志 */
 const getLoggerList = 'getLoggerList';
+/** 获取node path */
+const getNodePath = 'getNodePath';
+/** 重新加载配置事件 */
+const updateProjectConfig = 'updateProjectConfig';
+/** 生成模型JSON文件 */
+const buildModelJson = 'buildModelJson';
 module.exports = {
   openDialog,
   example,
@@ -29,4 +35,7 @@ module.exports = {
   generatorCURD,
   getModelByPojoPath,
   getLoggerList,
+  getNodePath,
+  updateProjectConfig,
+  buildModelJson,
 };

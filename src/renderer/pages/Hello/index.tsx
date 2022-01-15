@@ -11,6 +11,7 @@ import {
   Form,
   Input,
   List,
+  message,
   Modal,
   Row,
   Select,
@@ -24,7 +25,12 @@ import { useState } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { Link } from 'react-router-dom';
 import db from '../../dbModel';
-import { openDialog } from '../../util';
+import {
+  updateProjectConfig,
+  readFile,
+  getNodePath,
+  openDialog,
+} from '../../util';
 
 const scopedPackagePattern = new RegExp('^(?:@([^/]+?)[/])?([^/]+?)$');
 const { Option } = Select;
@@ -35,19 +41,26 @@ const HelloPage: React.FC = () => {
     return db.projects.toArray();
   });
   const importProject = async () => {
-    // eslint-disable-next-line @typescript-eslint/no-use-before-define
-    const url = await openDialog();
-    db.projects.add({
-      owner: '',
-      templateId: 0,
-      templateDir: '',
-      // TODO：  拆分url 转化成dir + name
-      projectDir: url.path,
-      projectName: url.name,
-      type: 1,
-      description: '',
+    const url = await openDialog({
+      properties: ['openFile'],
+      filters: [{ name: 'Json', extensions: ['json'] }],
     });
-    // 判断该目录下是否存在初始化的json,不存在抛出错误
+    // 1、取项目config
+    const json = JSON.parse(await readFile(url.path));
+    const project: CodeFaster.Project = {
+      ...(await json).project,
+      // 手动修正项目目录和名称
+      projectDir: await getNodePath('dirname', url.path),
+    };
+    console.log(project);
+    // 2、重新生成 ，并重新获取json参数[TODO：模版名称需要保存到config文件]
+    if (project.templateName) {
+      await updateProjectConfig(project);
+    } else {
+      message.error('配置文件缺少模版名称！');
+    }
+    // 3、新增项目到数据库
+    db.projects.add(project);
   };
 
   /** 根据参数加载模版数据 */
@@ -80,15 +93,13 @@ const HelloPage: React.FC = () => {
             .validateFields()
             .then(async (values: CodeFaster.Project) => {
               formRef.resetFields();
+              const result = await getNodePath(
+                'join',
+                values.projectDir,
+                values.projectName
+              );
+              values.projectDir = result;
               console.log(values);
-              const template = await db.templates.get({
-                id: values.templateId,
-              });
-              if (template?.templateDir) {
-                values.templateDir = template?.templateDir;
-              } else {
-                throw Error('the template must hava templateDir');
-              }
               db.projects.add(values);
               setCreateProjectModal(false);
             })
@@ -252,7 +263,7 @@ const HelloPage: React.FC = () => {
                     getFieldValue('templateList') || [];
                   return templateList.length ? (
                     <Form.Item
-                      name="templateId"
+                      name="templateName"
                       label="项目模版"
                       rules={[{ required: true, message: '请选择项目模版' }]}
                     >
@@ -260,7 +271,7 @@ const HelloPage: React.FC = () => {
                         {templateList?.map((template: CodeFaster.Template) => (
                           <Option
                             key={`${template.id}`}
-                            value={template.id || 0}
+                            value={template.templateName}
                           >
                             {template.templateName}({template.description})
                           </Option>
@@ -269,7 +280,7 @@ const HelloPage: React.FC = () => {
                     </Form.Item>
                   ) : (
                     <Form.Item
-                      name="templateId"
+                      name="templateName"
                       label="项目模版"
                       rules={[{ required: true, message: '请选择项目模版' }]}
                     >

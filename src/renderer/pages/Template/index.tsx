@@ -46,8 +46,10 @@ const TemplatePage: React.FC = () => {
     }
   };
   const addTemplate = (_activityResult: Npm.Package) => {
+    /** 项目类型 1、Java【后台】 2、Admin【管理系统】 3、Web【含PC、H5、小程序】 4、App【Android、ios】 */
+    const typeList = ['java', 'admin', 'web', 'app'];
     // 判断是否重复下载
-    const count = TemplateDatabase.templates
+    TemplateDatabase.templates
       .where('templateName')
       .equals(_activityResult.name)
       .count()
@@ -60,8 +62,9 @@ const TemplatePage: React.FC = () => {
             templateName: _activityResult.name,
             /** 作者 */
             owner: _activityResult.author.name,
-            /** 语言类型 1、Java 2、JavaScript */
-            type: _activityResult.keywords[0] === 'java' ? 1 : 2,
+            /** 项目类型 1、Java【后台】 2、Admin【管理系统】 3、Web【含PC、H5、小程序】 4、App【Android、ios】 */
+            type:
+              typeList.indexOf(_activityResult.keywords[0].toLowerCase()) + 1,
             version: _activityResult.version,
             /** 简介 */
             description: _activityResult.description,
@@ -71,9 +74,9 @@ const TemplatePage: React.FC = () => {
           ]);
           console.log(result);
           message.success({ content: '安装成功！' });
-        } else {
-          message.error('本地已安装');
+          return result;
         }
+        message.error('本地已安装');
         if (activityResult) {
           setActivityResult({ ...activityResult, hasInstall: true });
           templateResult?.objects.map((e) => {
@@ -82,7 +85,9 @@ const TemplatePage: React.FC = () => {
           });
         }
         return ele;
-      });
+      })
+      // eslint-disable-next-line no-console
+      .catch(console.error);
   };
   const removeTemplate = (ele: CodeFaster.Template) => {
     if (ele.id)

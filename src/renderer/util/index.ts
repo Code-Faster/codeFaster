@@ -47,29 +47,30 @@ export const execNpmCommand = async (
 };
 
 export const createModel = async (
-  templateName: string,
   project: CodeFaster.Project,
   model: CodeFaster.ModelForm
 ): Promise<void> => {
   await window.electron.ipcRenderer.execInvokeTask(
     window.electron.channel.createModel,
-    templateName,
     project,
     model
   );
 };
 export const initProject = async (
-  templateName: string,
   project: CodeFaster.Project
 ): Promise<void> => {
+  message.loading({
+    content: '正在执行..',
+    key: window.electron.channel.initProject,
+    duration: 0,
+  });
   await window.electron.ipcRenderer.execInvokeTask(
     window.electron.channel.initProject,
-    templateName,
     project
   );
+  message.destroy(window.electron.channel.initProject);
 };
 export const generatorCURD = async (
-  templateName: string,
   project: CodeFaster.Project,
   values: CodeFaster.CURDForm
 ): Promise<number> => {
@@ -86,7 +87,6 @@ export const generatorCURD = async (
   const result: CodeFaster.Result<string> =
     await window.electron.ipcRenderer.execInvokeTask(
       window.electron.channel.generatorCURD,
-      templateName,
       project,
       values
     );
@@ -95,4 +95,63 @@ export const generatorCURD = async (
   }
   message.destroy(window.electron.channel.generatorCURD);
   return result.code;
+};
+/**
+ * 重新生成项目配置文件
+ * @param filePath 文件地址
+ * @returns 文件流
+ */
+export const updateProjectConfig = async (
+  project: CodeFaster.Project
+): Promise<CodeFaster.ConfigJSON> => {
+  const arg = await window.electron.ipcRenderer.execInvokeTask(
+    window.electron.channel.updateProjectConfig,
+    project
+  );
+  return arg;
+};
+/**
+ * 根据地址读取文件
+ * @param filePath 文件地址
+ * @returns 文件流
+ */
+export const readFile = async (filePath: string): Promise<string> => {
+  const arg = await window.electron.ipcRenderer.execInvokeTask(
+    window.electron.channel.readFile,
+    filePath
+  );
+  return arg;
+};
+export const getNodePath = async (
+  cmd: 'basename' | 'dirname' | 'extname' | 'join' | 'normalize' | 'resolve',
+  ...args: string[]
+): Promise<string> => {
+  const arg = await window.electron.ipcRenderer.execInvokeTask(
+    window.electron.channel.getNodePath,
+    cmd,
+    ...args
+  );
+  // eslint-disable-next-line no-nested-ternary
+  return arg;
+};
+
+export const buildModelJson = async (
+  model: CodeFaster.ModelForm
+): Promise<void> => {
+  message.loading({
+    content: '正在执行..',
+    key: window.electron.channel.initProject,
+    duration: 0,
+  });
+
+  await window.electron.ipcRenderer
+    .execInvokeTask(window.electron.channel.buildModelJson, model)
+    .then((ele: { code: number; message: string }) => {
+      if (ele.code === 1) {
+        message.error(ele.message);
+      }
+      return ele;
+    })
+    .catch(console.log);
+  message.destroy(window.electron.channel.initProject);
 };

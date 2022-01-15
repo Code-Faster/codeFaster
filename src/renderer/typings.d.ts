@@ -108,6 +108,7 @@ declare namespace CodeFaster {
   interface ModelForm {
     buildPath: string;
     buildPathVo: string;
+    buildJsonPath?: string;
     tableArray: SqlTable[];
   }
   /**
@@ -134,15 +135,29 @@ declare namespace CodeFaster {
     projectDir: string;
     /** 作者 */
     owner?: string;
-    /** 语言类型 1、Java 2、JavaScript */
+    /** 项目类型 1、Java【后台】 2、Admin【管理系统】 3、Web【含PC、H5、小程序】 4、App【Android、ios】 */
     type?: number;
     /** 简介 */
     description?: string;
-    /** 项目模版 */
-    templateId?: number;
-    /** 模版ID对应的物理地址 */
-    templateDir: string;
+    /** 项目模版名称，要唯一 */
+    templateName: string;
 
+    /** Java项目详细参数 */
+    defaultPojoPath?: string;
+    defaultVoPath?: string;
+    defaultServicePath?: string;
+    defaultServiceImplPath?: string;
+    defaultControllerPath?: string;
+    defaultMapperPath?: string;
+    defaultUnitTestPath?: string;
+
+    /** 部署相关信息 */
+    testWebhook?: string;
+    prePublishWebhook?: string;
+    publishWebhook?: string;
+  }
+
+  interface JavaProject extends Project {
     /** Java项目详细参数 */
     defaultPojoPath?: string;
     defaultVoPath?: string;
@@ -192,20 +207,20 @@ declare namespace CodeFaster {
     port: number;
   }
 
-  type FileParams = {
-    url: string;
-    fileName: string;
-    fileType: string;
-  };
-
-  type FileObj = {
+  /**
+   * 项目配置文件cfconfig.json
+   */
+  type ConfigJSON = {
     fileName: string;
     path: string;
+    // 拷贝项目使用
     fromPath?: string;
-    formData?: CodeFaster.SqlTable;
+    /** 相对于项目根目录的地址 */
+    sortPath: string;
+    project?: CodeFaster.Project;
     // false 文件 true 文件夹
     isDir: boolean;
-    children: Array<FileObj>;
+    children: Array<ConfigJSON>;
   };
 
   /**
@@ -218,16 +233,21 @@ declare namespace CodeFaster {
     releasePath: string;
     model?: SqlTable;
   };
+
   /**
    * 代码生成器
    */
   interface CodeGenerator {
+    /** 公用方法：初始化项目 */
     init: (params: CodeFaster.Params) => void;
+    /** 公用方法：更新项目配置文件，并返回项目结构 */
+    updateProjectConfig: () => CodeFaster.ConfigJSON | undefined;
   }
   /**
-   * Java生成器
+   * Java生成器，Java模版私有化方法
    */
   interface JavaCodeGenerator extends CodeGenerator {
+    // 生成POJO
     generatorPojo: (params: CodeFaster.Params) => void;
 
     generatorVO: (params: CodeFaster.Params) => void;
@@ -243,6 +263,12 @@ declare namespace CodeFaster {
     generatorUnitTest: (params: CodeFaster.Params) => void;
 
     getModelByPojoPath: (filePath: string) => CodeFaster.SqlTable;
+  }
+  /**
+   * Admin系统生成器
+   */
+  interface AdminCodeGenerator extends CodeGenerator {
+    generatorPage: (params: CodeFaster.Params) => void;
   }
 
   /**

@@ -5,6 +5,7 @@ import {
   InfoCircleOutlined,
   PlusCircleOutlined,
   UserOutlined,
+  PlayCircleOutlined,
 } from '@ant-design/icons';
 import {
   Alert,
@@ -35,6 +36,7 @@ import {
   createModel,
   openDialog,
   generatorCURD,
+  buildModelJson,
 } from '../../util';
 
 const { TabPane } = Tabs;
@@ -43,8 +45,7 @@ const { Option } = Select;
 const ProjectPage: React.FC = () => {
   const [project, setProject] = useState<CodeFaster.Project>({
     owner: '',
-    templateId: 0,
-    templateDir: '',
+    templateName: '',
     projectDir: '',
     projectName: '',
     type: 1,
@@ -63,6 +64,7 @@ const ProjectPage: React.FC = () => {
   const [sqlForm] = Form.useForm();
   const [basicForm] = Form.useForm();
   const [CURDForm] = Form.useForm();
+  const [deployForm] = Form.useForm();
 
   /**
    * 查询数据库连接
@@ -311,13 +313,16 @@ const ProjectPage: React.FC = () => {
             <Row gutter={16}>
               <Col span={24}>
                 <Form.Item
-                  name="templateId"
+                  name="templateName"
                   label="项目模版"
                   rules={[{ required: true, message: '请选择项目模版' }]}
                 >
                   <Select placeholder="请选择项目类型">
                     {templateList?.map((template: CodeFaster.Template) => (
-                      <Option key={`${template.id}`} value={template.id || 0}>
+                      <Option
+                        key={`${template.id}`}
+                        value={template.templateName}
+                      >
                         {template.templateName}({template.description})
                       </Option>
                     ))}
@@ -612,11 +617,8 @@ const ProjectPage: React.FC = () => {
                 message.error({ content: '请至少选择一个表！' });
               }
               values.tableArray = tableArr;
-              const template: CodeFaster.Template = await db.templates.get({
-                id: project.templateId,
-              });
-              if (template?.templateName) {
-                createModel(template?.templateName, project, values)
+              if (project.templateName) {
+                createModel(project, values)
                   .then((data) => {
                     message.success({ content: '执行成功！' });
                     return data;
@@ -803,9 +805,37 @@ const ProjectPage: React.FC = () => {
                 </Form.Item>
               </Col>
             </Row>
-
+            <Row gutter={16}>
+              <Col span={24}>
+                <Form.Item name="buildJsonPath" label="目标模型JSON地址">
+                  <Input
+                    style={{ width: 'calc(100%)' }}
+                    placeholder="目标模型JSON地址"
+                    addonAfter={
+                      <Form.Item noStyle>
+                        <Button
+                          type="link"
+                          icon={<FolderOpenOutlined />}
+                          style={{ height: 24 }}
+                          onClick={async () => {
+                            modelForm.setFieldsValue({
+                              buildJsonPath: (
+                                await openDialog({
+                                  defaultPath: project.projectDir,
+                                  properties: ['openDirectory'],
+                                })
+                              ).path,
+                            });
+                          }}
+                        />
+                      </Form.Item>
+                    }
+                  />
+                </Form.Item>
+              </Col>
+            </Row>
             <Form.Item
-              wrapperCol={{ offset: 9, span: 6 }}
+              wrapperCol={{ offset: 6, span: 6 }}
               style={{ paddingTop: 16 }}
             >
               <Space>
@@ -820,6 +850,20 @@ const ProjectPage: React.FC = () => {
                 >
                   重置
                 </Button>
+                <Button
+                  type="primary"
+                  onClick={async () => {
+                    const values = modelForm.getFieldsValue();
+                    if (tableArr.length === 0) {
+                      message.error({ content: '请至少选择一个表！' });
+                    }
+                    values.tableArray = tableArr;
+                    console.log(values);
+                    await buildModelJson(values);
+                  }}
+                >
+                  导出模型JSON
+                </Button>
               </Space>
             </Form.Item>
           </Form>
@@ -829,14 +873,10 @@ const ProjectPage: React.FC = () => {
             layout="vertical"
             form={CURDForm}
             onFinish={async (values: CodeFaster.CURDForm) => {
-              console.log(values);
               // 根据模版ID找到模版信息
               if (project) {
-                const template: CodeFaster.Template = await db.templates.get({
-                  id: project.templateId,
-                });
-                if (template?.templateName) {
-                  generatorCURD(template?.templateName, project, values)
+                if (project.templateName) {
+                  generatorCURD(project, values)
                     .then((data) => {
                       message.success({ content: '执行成功！' });
                       return data;
@@ -1141,7 +1181,116 @@ const ProjectPage: React.FC = () => {
           <p>测试</p>
         </TabPane>
         <TabPane tab="运维" key="4">
-          <p>运维</p>
+          <Form
+            layout="vertical"
+            form={deployForm}
+            onFinish={(values: CodeFaster.Project) => {
+              if (project.id) {
+                db.projects.update(project.id, values);
+              }
+              message.success({ content: '更新成功！' });
+            }}
+          >
+            <Row gutter={16}>
+              <Col span={24}>
+                <Form.Item name="testWebhook" label="测试环境Webhook">
+                  <Input
+                    style={{ width: 'calc(100%)' }}
+                    placeholder="请输入测试环境Webhook"
+                    addonAfter={
+                      <Form.Item noStyle>
+                        <Button
+                          type="link"
+                          icon={<PlayCircleOutlined />}
+                          style={{ height: 24 }}
+                          onClick={async () => {
+                            console.log(
+                              `curl --header "Content-Type: application/json" --request POST --data '{}' ${deployForm.getFieldValue(
+                                'testWebhook'
+                              )}`
+                            );
+                          }}
+                        />
+                      </Form.Item>
+                    }
+                  />
+                </Form.Item>
+              </Col>
+            </Row>
+            <Row gutter={16}>
+              <Col span={24}>
+                <Form.Item
+                  name="prePublishWebhook"
+                  label="线上预发布环境Webhook"
+                >
+                  <Input
+                    style={{ width: 'calc(100%)' }}
+                    placeholder="请输入线上预发布环境Webhook"
+                    addonAfter={
+                      <Form.Item noStyle>
+                        <Button
+                          type="link"
+                          icon={<PlayCircleOutlined />}
+                          style={{ height: 24 }}
+                          onClick={async () => {
+                            console.log(
+                              `curl --header "Content-Type: application/json" --request POST --data '{}' ${deployForm.getFieldValue(
+                                'prePublishWebhook'
+                              )}`
+                            );
+                          }}
+                        />
+                      </Form.Item>
+                    }
+                  />
+                </Form.Item>
+              </Col>
+            </Row>
+            <Row gutter={16}>
+              <Col span={24}>
+                <Form.Item name="publishWebhook" label="正式环境Webhook">
+                  <Input
+                    style={{ width: 'calc(100%)' }}
+                    placeholder="请输入正式环境Webhook"
+                    addonAfter={
+                      <Form.Item noStyle>
+                        <Button
+                          type="link"
+                          icon={<PlayCircleOutlined />}
+                          style={{ height: 24 }}
+                          onClick={async () => {
+                            console.log(
+                              `curl --header "Content-Type: application/json" --request POST --data '{}' ${deployForm.getFieldValue(
+                                'publishWebhook'
+                              )}`
+                            );
+                          }}
+                        />
+                      </Form.Item>
+                    }
+                  />
+                </Form.Item>
+              </Col>
+            </Row>
+            <Form.Item
+              wrapperCol={{ offset: 9, span: 6 }}
+              style={{ paddingTop: 16 }}
+            >
+              <Space>
+                <Button type="primary" htmlType="submit">
+                  保存参数
+                </Button>
+                <Button
+                  htmlType="button"
+                  onClick={() => {
+                    deployForm.resetFields();
+                  }}
+                >
+                  重置
+                </Button>
+              </Space>
+            </Form.Item>
+          </Form>
         </TabPane>
       </Tabs>
     </main>

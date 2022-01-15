@@ -1,17 +1,17 @@
 import Dexie, { Table } from 'dexie';
 
 class ProjectDatabase extends Dexie {
-  projects!: Table<Project, number>; // id is number in this case
+  projects!: Table<CodeFaster.Project, number>; // id is number in this case
 
-  templates!: Table<Template, number>; // id is number in this case
+  templates!: Table<CodeFaster.Template, number>; // id is number in this case
 
-  sqlConnections!: Table<SqlConnection, number>; // id is number in this case
+  sqlConnections!: Table<CodeFaster.SqlConnection, number>; // id is number in this case
 
   public constructor() {
     super('codeFaster');
-    this.version(1).stores({
+    this.version(3).stores({
       projects:
-        '++id,projectName,projectDir,owner,type,description,templateId,createTime,updateTime,defaultPojoPath,defaultVoPath,defaultServicePath,defaultServiceImplPath',
+        '++id,projectName,projectDir,owner,type,description,templateName,createTime,updateTime,defaultPojoPath,defaultVoPath,defaultServicePath,defaultServiceImplPath,testWebhook,prePublishWebhook,publishWebhook',
     });
     this.version(1).stores({
       templates:
