@@ -6,6 +6,7 @@ import {
   PlusCircleOutlined,
   UserOutlined,
   PlayCircleOutlined,
+  SearchOutlined,
 } from '@ant-design/icons';
 import {
   Alert,
@@ -16,6 +17,7 @@ import {
   Form,
   Input,
   InputNumber,
+  List,
   message,
   Modal,
   Row,
@@ -28,9 +30,12 @@ import {
 import { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { TableRowSelection } from 'antd/lib/table/interface';
+import TestFlowStepsForm from 'renderer/components/StepsForm/TestFlowStepsForm';
+import styles from './index.module.less';
 import db from '../../dbModel';
 import DescriptionItem from '../../components/Description';
 import {
+  updateProjectConfig,
   createMysqlConnection,
   initProject,
   createModel,
@@ -65,10 +70,13 @@ const ProjectPage: React.FC = () => {
   const [basicForm] = Form.useForm();
   const [CURDForm] = Form.useForm();
   const [deployForm] = Form.useForm();
-
-  /**
-   * 查询数据库连接
-   */
+  const [createTestFlowFrom] = Form.useForm();
+  const [flowList, setFlowList] = useState<CodeFaster.TestFlow[]>();
+  const [projectJSON, setProjectJSON] = useState<CodeFaster.ConfigJSON>();
+  const [createTestFlowModal, setCreateTestFlowModal] =
+    useState<boolean>(false);
+  const [curFlow, setCurFlow] = useState<CodeFaster.TestFlow>();
+  /** 查询数据库连接 */
   const queryAllSqlConnections = () => {
     db.sqlConnections
       .toArray()
@@ -114,10 +122,7 @@ const ProjectPage: React.FC = () => {
       Table.SELECTION_NONE,
     ],
   };
-  /**
-   * 新增项目
-   * @returns
-   */
+  /** 新增SQL链接 */
   const CreateSqlModal = () => {
     return (
       <Modal
@@ -247,6 +252,103 @@ const ProjectPage: React.FC = () => {
       </Modal>
     );
   };
+
+  /** 新增测试流程 */
+  const loadTestFlow = async () => {
+    const list = await db.testFlows
+      .where('projectId')
+      .equals(parseInt(params.projectId!, 10))
+      .toArray();
+    setFlowList(list);
+  };
+  const CreateTestFlow = () => {
+    return (
+      <TestFlowStepsForm
+        visibleModal={createTestFlowModal}
+        setVisibleModal={setCreateTestFlowModal}
+        formRef={createTestFlowFrom}
+        projectJSON={projectJSON!}
+        initDataSource={curFlow}
+        onSumbit={(values) => {
+          if (values.id) {
+            db.testFlows.update(values.id, values);
+          } else {
+            // 保存流程
+            db.testFlows.add(values);
+          }
+          loadTestFlow();
+        }}
+      />
+    );
+  };
+
+  // 执行流程测试
+  const execTestFlow = async (flow: CodeFaster.TestFlow) => {
+    console.log(`流程【${flow.name}】开始执行`);
+    const preApiResult: Array<any> = [];
+    flow.nodes.forEach((element) => {
+      const url = flow.apiPath + element.serviceApi;
+      if (element.service && element.service.requestMappingType === 'POST') {
+        const result = Object.create(null);
+        const paramsList = element.service.apiImplicitParamsText;
+        if (paramsList.length > 0) {
+          paramsList.forEach((param) => {
+            // 如果引入外部接口
+            if (param.importApiIndex) {
+              const curData = preApiResult[param.importApiIndex - 1];
+              const resultStr = param.importApiResponse
+                ? param.importApiResponse.split('.')
+                : [];
+              if (resultStr.length === 0) return;
+              let curVar = curData[resultStr[0]];
+              resultStr.forEach((str: any, index: number) => {
+                if (index > 0) {
+                  if (str.indexOf('[') > 0) {
+                    // 数组形参数
+                    const arr = str.replace(/\]/g, '').split('[');
+                    curVar = curVar[arr[0]][arr[1]];
+                  } else {
+                    curVar = curVar[str];
+                  }
+                }
+              });
+              Object.defineProperty(result, param.name, {
+                value: curVar,
+                enumerable: true,
+              });
+            } else {
+              if (undefined === param.data || param.data.length === 0) {
+                console.log(`接口${url}「参数不全」`);
+              }
+              Object.defineProperty(result, param.name, {
+                value: param.data,
+                enumerable: true,
+              });
+            }
+          });
+        }
+        fetch(url, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json;charset=utf-8',
+            // 'Content-Type': 'application/x-www-form-urlencoded',
+          },
+          body: JSON.stringify(result),
+        })
+          .then((res) => res.json())
+          .then((response) => {
+            console.log('Success:', response);
+            preApiResult.push(response);
+            return response;
+          })
+          .catch(console.log);
+      }
+    });
+    // 更新测试结果/测试时间
+    // 更新数据库信息
+    console.log(`流程【${flow.name}】执行结束`);
+  };
+
   useEffect(() => {
     if (params.projectId) {
       db.projects
@@ -258,21 +360,47 @@ const ProjectPage: React.FC = () => {
             setProject(data);
             basicForm.setFieldsValue(data);
             loadTemplate(data.type);
+            // eslint-disable-next-line promise/no-nesting
+            updateProjectConfig(data)
+              .then((e: CodeFaster.ConfigJSON) => {
+                setProjectJSON(e);
+                return e;
+              })
+              .catch((e) => {
+                console.error(e.stack || e);
+              });
           }
           return data;
         })
         .catch((e) => {
-          // eslint-disable-next-line no-console
+          console.error(e.stack || e);
+        });
+      db.testFlows
+        .where('projectId')
+        .equals(parseInt(params.projectId, 10))
+        .toArray()
+        .then((data: CodeFaster.TestFlow[]) => {
+          if (data) {
+            setFlowList(data);
+          }
+          return data;
+        })
+        .catch((e) => {
           console.error(e.stack || e);
         });
     }
-
     queryAllSqlConnections();
-    return () => {};
+
+    return () => {
+      setProject(Object.create(null));
+      setProjectJSON(Object.create(null));
+      setFlowList([]);
+    };
   }, [basicForm, params.projectId]);
   return (
     <main>
       <CreateSqlModal />
+      <CreateTestFlow />
       <Typography style={{ position: 'relative' }}>
         <Title level={2}>{project?.projectName}</Title>
         <DescriptionItem
@@ -286,6 +414,13 @@ const ProjectPage: React.FC = () => {
           style={{ position: 'absolute', top: 10, right: 10 }}
           onClick={() => {
             initProject(project);
+            updateProjectConfig(project)
+              .then((e) => {
+                return e;
+              })
+              .catch((e) => {
+                console.error(e.stack || e);
+              });
           }}
         >
           初始化项目
@@ -858,7 +993,6 @@ const ProjectPage: React.FC = () => {
                       message.error({ content: '请至少选择一个表！' });
                     }
                     values.tableArray = tableArr;
-                    console.log(values);
                     await buildModelJson(values);
                   }}
                 >
@@ -1178,7 +1312,78 @@ const ProjectPage: React.FC = () => {
           </Form>
         </TabPane>
         <TabPane tab="测试" key="3">
-          <p>测试</p>
+          <Row>
+            <Col span={14}>
+              <Input
+                className={styles.searchInput}
+                size="large"
+                placeholder="搜索流程"
+                prefix={<SearchOutlined />}
+              />
+            </Col>
+            <Col span={10} className={styles.searchButtonArea}>
+              <Space>
+                <Button
+                  type="primary"
+                  size="small"
+                  onClick={() => {
+                    setCurFlow(Object.create(null));
+                    setCreateTestFlowModal(true);
+                  }}
+                >
+                  新建流程
+                </Button>
+              </Space>
+            </Col>
+          </Row>
+          <Divider style={{ margin: 5 }} />
+          <List
+            itemLayout="horizontal"
+            dataSource={flowList}
+            renderItem={(item: CodeFaster.TestFlow) => (
+              <List.Item
+                className={styles.listItemHover}
+                actions={[
+                  <Button
+                    type="link"
+                    key={`${item.id}-delate`}
+                    onClick={() => {
+                      execTestFlow(item);
+                    }}
+                  >
+                    执行
+                  </Button>,
+                  <Button
+                    type="link"
+                    key={`${item.id}-editer`}
+                    onClick={() => {
+                      setCurFlow(item);
+                      setCreateTestFlowModal(true);
+                    }}
+                  >
+                    编辑
+                  </Button>,
+                  <Button
+                    type="link"
+                    key={`${item.id}-delate`}
+                    onClick={() => {
+                      if (item.id) {
+                        db.testFlows.where('id').equals(item.id).delete();
+                        loadTestFlow();
+                      }
+                    }}
+                  >
+                    删除
+                  </Button>,
+                ]}
+              >
+                <List.Item.Meta
+                  title={item.name}
+                  description={`节点数：${item.nodes.length}`}
+                />
+              </List.Item>
+            )}
+          />
         </TabPane>
         <TabPane tab="运维" key="4">
           <Form

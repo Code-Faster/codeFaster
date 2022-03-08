@@ -108,7 +108,7 @@ export const updateProjectConfig = async (
     window.electron.channel.updateProjectConfig,
     project
   );
-  return arg;
+  return arg.data;
 };
 /**
  * 根据地址读取文件
@@ -154,4 +154,16 @@ export const buildModelJson = async (
     })
     .catch(console.log);
   message.destroy(window.electron.channel.initProject);
+};
+
+export const getApis = async (
+  pathList: Array<CodeFaster.SearchJSON>
+): Promise<Array<CodeFaster.ControllerApi>> => {
+  const arg = await window.electron.ipcRenderer
+    .execInvokeTask(window.electron.channel.getApis, pathList)
+    .catch(console.log);
+  if (arg.code === 1) {
+    message.error(arg.message);
+  }
+  return arg.data;
 };

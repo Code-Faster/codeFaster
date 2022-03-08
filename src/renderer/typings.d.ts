@@ -79,6 +79,106 @@ declare namespace Npm {
 }
 
 declare namespace CodeFaster {
+  /** 搜索结果「下拉框使用」 */
+  interface SearchJSON {
+    // 下拉框label
+    label: string;
+    // 下拉框描述
+    title: string;
+    // 下拉框值
+    value: string;
+  }
+  /** 测试流程表 */
+  interface TestFlow {
+    id?: number;
+    // 项目ID
+    projectId: number;
+    // 流程名称
+    name: string;
+    // 流程节点
+    nodes: FlowNode[];
+    // 接口地址前缀
+    apiPath: string;
+    // 其他请求参数
+    apiOtherParams: string;
+    // 1、正常 2、失败
+    state: number;
+  }
+  /** 测试流程节点 */
+  interface FlowNode {
+    // 表格唯一键
+    id: number;
+    // 节点参数列表
+    params?: FlowParam[];
+    // 节点关联的接口
+    service?: ServiceApi;
+    // 接口api地址
+    serviceApi: string;
+    // 接口api描述
+    serviceText?: string;
+  }
+  /** 测试流程节点参数 */
+  interface FlowParam {
+    // 表格唯一键
+    id: string;
+    // 参数名
+    name: string;
+    // 参数描述
+    value?: string;
+    // 参数值
+    data: string;
+    // 数据类型
+    dataType?: string;
+    // 是否必传
+    required: boolean;
+    // 前置接口索引
+    importApiIndex?: number;
+    // 前置接口返回参数
+    importApiResponse?: string;
+  }
+  /** 接口信息 */
+  interface ServiceApi {
+    api: string;
+    //
+    apiText: string;
+    //
+    requestMapping: string;
+    //
+    requestMappingText: string;
+    //
+    requestMappingType: string;
+    //
+    apiOperation: string;
+    //
+    apiOperationText: string;
+    //
+    postMapping: string;
+    //
+    getMapping: string;
+    // 参数
+    apiImplicitParamsText: Array<FlowParam>;
+    //
+    apiImplicitParams: string;
+    //
+    public: string;
+  }
+  /** controller对象 */
+  interface ControllerApi {
+    // 接口列表
+    result: Array<ServiceApi>;
+    //
+    api: string;
+    //
+    apiText: string;
+    //
+    requestMapping: string;
+    //
+    requestMappingText: string;
+    // 是否跳过测试
+    isSkip: boolean;
+    // Java类名
+    className: string;
+  }
   /**
    * 表SQL列对象
    */

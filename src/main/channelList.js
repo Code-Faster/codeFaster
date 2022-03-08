@@ -24,6 +24,8 @@ const getNodePath = 'getNodePath';
 const updateProjectConfig = 'updateProjectConfig';
 /** 生成模型JSON文件 */
 const buildModelJson = 'buildModelJson';
+/** 根据文件地址获取文件接口参数 */
+const getApis = 'getApis';
 module.exports = {
   openDialog,
   example,
@@ -38,4 +40,5 @@ module.exports = {
   getNodePath,
   updateProjectConfig,
   buildModelJson,
+  getApis,
 };

@@ -115,7 +115,7 @@ const HelloPage: React.FC = () => {
           layout="vertical"
           name="project"
           form={formRef}
-          initialValues={{ type: '1', templateList: [] }}
+          initialValues={{ type: 1, templateList: [] }}
         >
           <Row gutter={16}>
             <Col span={24}>
@@ -231,20 +231,17 @@ const HelloPage: React.FC = () => {
             <Col span={12}>
               <Form.Item
                 name="type"
-                label="语言类型"
-                rules={[{ required: true, message: '请选择语言类型' }]}
+                label="项目类型"
+                rules={[{ required: true, message: '请选择项目类型' }]}
               >
                 <Select placeholder="请选择语言类型" onChange={loadTemplate}>
-                  <Option value="1">Java</Option>
-                  <Option value="2">JavaScript</Option>
-                  <Option value="3" disabled>
-                    NodeJs
+                  <Option value={1}>Java【后台】</Option>
+                  <Option value={2}>Admin【管理系统】</Option>
+                  <Option value={3} disabled>
+                    Web【含PC、H5、小程序】
                   </Option>
-                  <Option value="4" disabled>
-                    Go
-                  </Option>
-                  <Option value="5" disabled>
-                    Python
+                  <Option value={4} disabled>
+                    App【Android、ios】
                   </Option>
                 </Select>
               </Form.Item>

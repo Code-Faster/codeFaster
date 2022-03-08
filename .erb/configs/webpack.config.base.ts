@@ -33,6 +33,9 @@ export default {
             options: {
               lessOptions: {
                 javascriptEnabled: true,
+                modifyVars: {
+                  '@root-entry-name': 'default',
+                },
               },
             },
           },
@@ -53,7 +56,7 @@ export default {
    * Determine the array of extensions that should be used to resolve modules.
    */
   resolve: {
-    extensions: ['.js', '.jsx', '.json', '.ts', '.tsx', '.less'],
+    extensions: ['.js', '.jsx', '.json', '.ts', '.tsx','.less'],
     modules: [webpackPaths.srcPath, 'node_modules'],
   },
 
