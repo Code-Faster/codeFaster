@@ -29,7 +29,7 @@ import {
 import { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { TableRowSelection } from 'antd/lib/table/interface';
-import ProForm, { ModalForm, ProFormText } from '@ant-design/pro-form';
+import { ModalForm, ProFormTextArea } from '@ant-design/pro-form';
 import TestFlowStepsForm from 'renderer/components/StepsForm/TestFlowStepsForm';
 import styles from './index.module.less';
 import db from '../../dbModel';
@@ -469,13 +469,22 @@ const ProjectPage: React.FC = () => {
         }}
         onFinish={async (values) => {
           // await waitTime(2000);
-          console.log(values.name);
+          const importList: Array<CodeFaster.TestFlow> = JSON.parse(
+            values.name
+          );
+          console.log(importList);
+          for (const iterator of importList) {
+            // 重置导出数据的ID
+            iterator.id = undefined;
+            // 保存流程
+            db.testFlows.add(iterator);
+            loadTestFlow();
+          }
           message.success('提交成功');
           return true;
         }}
       >
-        <ProFormText
-          width="md"
+        <ProFormTextArea
           name="name"
           label="流程数组"
           tooltip="数组格式"
