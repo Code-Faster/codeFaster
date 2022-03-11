@@ -11,14 +11,14 @@ class ProjectDatabase extends Dexie {
 
   public constructor() {
     super('codeFaster');
-    this.version(4).stores({
+    this.version(5).stores({
       projects:
         '++id,projectName,projectDir,owner,type,description,templateName,createTime,updateTime,defaultPojoPath,defaultVoPath,defaultServicePath,defaultServiceImplPath,testWebhook,prePublishWebhook,publishWebhook',
       templates:
         '++id,url,templateName,templateDir,owner,type,description,version,createTime,updateTime',
       sqlConnections:
         '++id,connectionName,dbType,host,user,password,database,port',
-      testFlows: '++id,projectId,name,nodes,apiPath,apiOtherParams,state',
+      testFlows: '++id,projectId,name,nodes,apiPath,apiOtherParams,state,serviceList,controllerList,controller',
     });
   }
 }

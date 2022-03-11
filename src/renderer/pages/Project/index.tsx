@@ -6,7 +6,6 @@ import {
   PlusCircleOutlined,
   UserOutlined,
   PlayCircleOutlined,
-  SearchOutlined,
 } from '@ant-design/icons';
 import {
   Alert,
@@ -14,10 +13,10 @@ import {
   Card,
   Col,
   Divider,
+  Drawer,
   Form,
   Input,
   InputNumber,
-  List,
   message,
   Modal,
   Row,
@@ -34,6 +33,20 @@ import TestFlowStepsForm from 'renderer/components/StepsForm/TestFlowStepsForm';
 import styles from './index.module.less';
 import db from '../../dbModel';
 import DescriptionItem from '../../components/Description';
+import { UnControlled as UnControlledCodeMirror } from 'react-codemirror2';
+import 'codemirror/mode/javascript/javascript';
+import 'codemirror/addon/fold/foldcode.js'; // 代码折叠
+import 'codemirror/addon/fold/foldgutter.js'; // 代码折叠
+import 'codemirror/addon/fold/brace-fold.js'; // 代码折叠
+import 'codemirror/addon/fold/comment-fold.js'; // 代码折叠
+import 'codemirror/addon/hint/javascript-hint.js'; // 自动提示
+import 'codemirror/addon/selection/active-line.js'; // 当前行高亮
+import CodeMirror from 'codemirror/src/codemirror';
+import 'codemirror/addon/fold/foldgutter.css'; // 代码折叠
+import 'codemirror/lib/codemirror.css'; // 编辑器样式
+import 'codemirror/lib/codemirror.css';
+import 'codemirror/theme/material.css';
+
 import {
   updateProjectConfig,
   createMysqlConnection,
@@ -43,6 +56,8 @@ import {
   generatorCURD,
   buildModelJson,
 } from '../../util';
+import ProTable, { ProColumns } from '@ant-design/pro-table';
+import ProCard from '@ant-design/pro-card';
 
 const { TabPane } = Tabs;
 const { Title } = Typography;
@@ -76,6 +91,12 @@ const ProjectPage: React.FC = () => {
   const [createTestFlowModal, setCreateTestFlowModal] =
     useState<boolean>(false);
   const [curFlow, setCurFlow] = useState<CodeFaster.TestFlow>();
+  const [logs, setLogs] = useState<Array<any>>([]);
+  const [logsStr, setLogsStr] = useState<string>('');
+  const [showExportTestFlow, setShowExportTestFlow] = useState<boolean>(false);
+  const [exportTestFlow, setExportTestFlow] = useState<CodeFaster.TestFlow[]>(
+    []
+  );
   /** 查询数据库连接 */
   const queryAllSqlConnections = () => {
     db.sqlConnections
@@ -284,10 +305,11 @@ const ProjectPage: React.FC = () => {
 
   // 执行流程测试
   const execTestFlow = async (flow: CodeFaster.TestFlow) => {
-    console.log(`流程【${flow.name}】开始执行`);
+    logs.push(`【${flow.name}】流程开始执行`);
     const preApiResult: Array<any> = [];
     flow.nodes.forEach((element) => {
       const url = flow.apiPath + element.serviceApi;
+      logs.push(`「节点：」${url}`);
       if (element.service && element.service.requestMappingType === 'POST') {
         const result = Object.create(null);
         const paramsList = element.service.apiImplicitParamsText;
@@ -318,7 +340,7 @@ const ProjectPage: React.FC = () => {
               });
             } else {
               if (undefined === param.data || param.data.length === 0) {
-                console.log(`接口${url}「参数不全」`);
+                logs.push(`${url}「参数不全」`);
               }
               Object.defineProperty(result, param.name, {
                 value: param.data,
@@ -327,6 +349,7 @@ const ProjectPage: React.FC = () => {
             }
           });
         }
+        logs.push(`「入参：」${JSON.stringify(result)}`);
         fetch(url, {
           method: 'POST',
           headers: {
@@ -337,17 +360,91 @@ const ProjectPage: React.FC = () => {
         })
           .then((res) => res.json())
           .then((response) => {
-            console.log('Success:', response);
+            logs.push(`「回参：」${JSON.stringify(response)}`);
             preApiResult.push(response);
+            setLogs(logs);
+            setLogsStr(logs.join('\r\n'));
             return response;
           })
-          .catch(console.log);
+          .catch((error) => {
+            console.log(error);
+            logs.push(`「节点异常：」${JSON.stringify(error | error.stack)}`);
+            setLogs(logs);
+            setLogsStr(logs.join('\r\n'));
+          });
       }
     });
-    // 更新测试结果/测试时间
-    // 更新数据库信息
-    console.log(`流程【${flow.name}】执行结束`);
   };
+  // 流程列表
+  const columns: ProColumns<CodeFaster.TestFlow>[] = [
+    {
+      title: '流程名称',
+      width: 120,
+      dataIndex: 'name',
+      fixed: 'left',
+    },
+    {
+      title: '节点数量',
+      width: 120,
+      // align: 'right',
+      render: (text, record, index) => [
+        <span key="index">{record.nodes.length}</span>,
+      ],
+    },
+    {
+      title: '请求前缀',
+      width: 120,
+      // align: 'right',
+      dataIndex: 'apiPath',
+    },
+
+    {
+      title: '额外参数',
+      width: 120,
+      // align: 'right',
+      dataIndex: 'apiOtherParams',
+    },
+    {
+      title: '操作',
+      width: 80,
+      key: 'option',
+      valueType: 'option',
+      fixed: 'right',
+      render: (text, record, index) => [
+        <Button
+          type="link"
+          key={`${record.id}-delate`}
+          onClick={() => {
+            execTestFlow(record);
+          }}
+        >
+          执行
+        </Button>,
+        <Button
+          type="link"
+          key={`${record.id}-editer`}
+          onClick={() => {
+            setCurFlow(record);
+            setCreateTestFlowModal(true);
+          }}
+        >
+          编辑
+        </Button>,
+        <Button
+          type="link"
+          key={`${record.id}-delate`}
+          onClick={() => {
+            if (record.id) {
+              db.testFlows.where('id').equals(record.id).delete();
+              loadTestFlow();
+            }
+          }}
+        >
+          删除
+        </Button>,
+      ],
+    },
+  ];
 
   useEffect(() => {
     if (params.projectId) {
@@ -401,6 +498,87 @@ const ProjectPage: React.FC = () => {
     <main>
       <CreateSqlModal />
       <CreateTestFlow />
+      <Drawer
+        title="导出流程信息"
+        placement={'bottom'}
+        onClose={() => {
+          setShowExportTestFlow(false);
+        }}
+        visible={showExportTestFlow}
+        key="exportTestFlow"
+      >
+        <UnControlledCodeMirror
+          value={`[\r\n${exportTestFlow
+            .map((e) => JSON.stringify(e))
+            .join(',\r\n')}\r\n]`}
+          options={{
+            mode: 'application/json',
+            theme: 'material',
+            lineWrapping: false,
+            styleActiveLine: true, // 选中行高亮
+            gutters: ['CodeMirror-lint-markers'],
+            lineNumbers: true,
+            indentUnit: 4,
+          }}
+          onFocus={(editor) => {
+            let totalLines = editor.lineCount();
+            const from = { line: 0, ch: 0 };
+            const to = { line: totalLines, ch: 0 };
+            var cm = editor;
+            var outer = cm.getMode(),
+              text = cm.getRange(from, to).split('\n');
+            var state = CodeMirror.copyState(outer, cm.getTokenAt(from).state);
+            var tabSize = cm.getOption('tabSize');
+
+            var out = '',
+              lines = 0,
+              atSol = from.ch == 0;
+            function newline() {
+              out += '\n';
+              atSol = true;
+              ++lines;
+            }
+
+            for (var i = 0; i < text.length; ++i) {
+              var stream = new CodeMirror.StringStream(text[i], tabSize);
+              while (!stream.eol()) {
+                var inner = CodeMirror.innerMode(outer, state);
+                var style = outer.token(stream, state),
+                  cur = stream.current();
+                stream.start = stream.pos;
+                if (!atSol || /\S/.test(cur)) {
+                  out += cur;
+                  atSol = false;
+                }
+                if (
+                  !atSol &&
+                  inner.mode.newlineAfterToken &&
+                  inner.mode.newlineAfterToken(
+                    style,
+                    cur,
+                    stream.string.slice(stream.pos) || text[i + 1] || '',
+                    inner.state
+                  )
+                )
+                  newline();
+              }
+              if (!stream.pos && outer.blankLine) outer.blankLine(state);
+              if (!atSol) newline();
+            }
+
+            cm.operation(function () {
+              cm.replaceRange(out, from, to);
+              for (
+                var cur = from.line + 1, end = from.line + lines;
+                cur <= end;
+                ++cur
+              )
+                cm.indentLine(cur, 'smart');
+              cm.setSelection(from, cm.getCursor(false));
+            });
+          }}
+        />
+      </Drawer>
       <Typography style={{ position: 'relative' }}>
         <Title level={2}>{project?.projectName}</Title>
         <DescriptionItem
@@ -1312,78 +1490,92 @@ const ProjectPage: React.FC = () => {
           </Form>
         </TabPane>
         <TabPane tab="测试" key="3">
-          <Row>
-            <Col span={14}>
-              <Input
-                className={styles.searchInput}
-                size="large"
-                placeholder="搜索流程"
-                prefix={<SearchOutlined />}
-              />
-            </Col>
-            <Col span={10} className={styles.searchButtonArea}>
-              <Space>
-                <Button
-                  type="primary"
-                  size="small"
-                  onClick={() => {
-                    setCurFlow(Object.create(null));
-                    setCreateTestFlowModal(true);
-                  }}
-                >
-                  新建流程
-                </Button>
+          <ProTable<CodeFaster.TestFlow>
+            columns={columns}
+            rowSelection={{
+              // 自定义选择项参考: https://ant.design/components/table-cn/#components-table-demo-row-selection-custom
+              // 注释该行则默认不显示下拉选项
+              selections: [Table.SELECTION_ALL, Table.SELECTION_INVERT],
+              defaultSelectedRowKeys: [],
+            }}
+            tableAlertRender={({ selectedRowKeys, onCleanSelected }) => (
+              <Space size={24}>
+                <span>
+                  已选 {selectedRowKeys.length} 项
+                  <a style={{ marginLeft: 8 }} onClick={onCleanSelected}>
+                    取消选择
+                  </a>
+                </span>
               </Space>
-            </Col>
-          </Row>
-          <Divider style={{ margin: 5 }} />
-          <List
-            itemLayout="horizontal"
-            dataSource={flowList}
-            renderItem={(item: CodeFaster.TestFlow) => (
-              <List.Item
-                className={styles.listItemHover}
-                actions={[
-                  <Button
-                    type="link"
-                    key={`${item.id}-delate`}
-                    onClick={() => {
-                      execTestFlow(item);
-                    }}
-                  >
-                    执行
-                  </Button>,
-                  <Button
-                    type="link"
-                    key={`${item.id}-editer`}
-                    onClick={() => {
-                      setCurFlow(item);
-                      setCreateTestFlowModal(true);
-                    }}
-                  >
-                    编辑
-                  </Button>,
-                  <Button
-                    type="link"
-                    key={`${item.id}-delate`}
-                    onClick={() => {
-                      if (item.id) {
-                        db.testFlows.where('id').equals(item.id).delete();
-                        loadTestFlow();
-                      }
-                    }}
-                  >
-                    删除
-                  </Button>,
-                ]}
-              >
-                <List.Item.Meta
-                  title={item.name}
-                  description={`节点数：${item.nodes.length}`}
-                />
-              </List.Item>
             )}
+            tableAlertOptionRender={({ selectedRowKeys, selectedRows }) => {
+              return (
+                <Space size={16}>
+                  <Button
+                    type="primary"
+                    size="small"
+                    key="export"
+                    onClick={() => {
+                      setExportTestFlow(selectedRows);
+                      setShowExportTestFlow(true);
+                    }}
+                  >
+                    导出流程
+                  </Button>
+                </Space>
+              );
+            }}
+            toolBarRender={() => [
+              <Button
+                type="primary"
+                size="small"
+                onClick={() => {
+                  setCurFlow(Object.create(null));
+                  setCreateTestFlowModal(true);
+                }}
+              >
+                新建流程
+              </Button>,
+
+              <Button type="primary" size="small" onClick={() => {}}>
+                导入流程
+              </Button>,
+            ]}
+            dataSource={flowList}
+            options={false}
+            search={false}
+            pagination={false}
+            rowKey="id"
           />
+          <ProCard
+            title="执行日志"
+            headerBordered
+            collapsible
+            // defaultCollapsed
+            extra={
+              <Button
+                size="small"
+                type="primary"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setLogs([]);
+                  setLogsStr('');
+                }}
+              >
+                清空日志
+              </Button>
+            }
+          >
+            <UnControlledCodeMirror
+              value={logsStr}
+              options={{
+                mode: 'javascript',
+                theme: 'material',
+                lineNumbers: true,
+              }}
+              onChange={(editor, data, value) => {}}
+            />
+          </ProCard>
         </TabPane>
         <TabPane tab="运维" key="4">
           <Form

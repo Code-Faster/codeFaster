@@ -256,11 +256,16 @@ const TestFlowStepsForm: React.FC<TestFlowStepsFormProps> = ({
       console.log('初始化组件数据', initDataSource);
       formRef.setFieldsValue(initDataSource);
       if (initDataSource.nodes) {
+        setTreeData(initDataSource.controllerList);
+        console.log(initDataSource.serviceList)
+        setServiceList(initDataSource.serviceList);
         setServiceDataSource(initDataSource.nodes);
       }
     }
     return () => {
       setServiceDataSource([]);
+      setServiceList([]);
+      setTreeData([]);
     };
   }, [initDataSource]);
 
@@ -286,6 +291,8 @@ const TestFlowStepsForm: React.FC<TestFlowStepsFormProps> = ({
         width={1000}
         onOk={(values: CodeFaster.TestFlow) => {
           values.nodes = serviceDataSource;
+          values.controllerList = treeData;
+          values.serviceList = serviceList;
           if (projectJSON.project?.id)
             values.projectId = projectJSON.project?.id;
           if (initDataSource && initDataSource.id) {

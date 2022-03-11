@@ -101,6 +101,12 @@ declare namespace CodeFaster {
     apiPath: string;
     // 其他请求参数
     apiOtherParams: string;
+    //
+    controller: Array<number>;
+    // 返回的节点信息
+    controllerList: Array<CodeFaster.SearchJSON>;
+    //
+    serviceList: Array<CodeFaster.ControllerApi>;
     // 1、正常 2、失败
     state: number;
   }

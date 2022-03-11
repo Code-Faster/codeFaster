@@ -19,8 +19,6 @@ import {
   ProjectOutlined,
   ControlOutlined,
   ArrowUpOutlined,
-  GithubOutlined,
-  PlusSquareOutlined,
   AppstoreOutlined,
 } from '@ant-design/icons';
 import icon from '../../assets/icon.svg';

@@ -10,6 +10,7 @@ specifiers:
   '@teamsupercell/typings-for-css-modules-loader': ^2.5.1
   '@testing-library/jest-dom': ^5.14.1
   '@testing-library/react': ^12.1.2
+  '@types/codemirror': ^5.60.5
   '@types/cross-spawn': ^6.0.2
   '@types/enzyme': ^3.10.10
   '@types/enzyme-adapter-react-16': ^1.0.6
@@ -30,6 +31,7 @@ specifiers:
   antd: 4.18.9
   browserslist-config-erb: ^0.0.3
   chalk: 4.1.2
+  codemirror: 5.60.0
   concurrently: ^6.3.0
   core-js: ^3.19.0
   cross-env: ^7.0.3
@@ -77,6 +79,7 @@ specifiers:
   prettier: ^2.4.1
   rc-virtual-list: ^3.4.2
   react: ^17.0.2
+  react-codemirror2: ^7.2.1
   react-color: ^2.19.3
   react-dom: ^17.0.2
   react-refresh: ^0.10.0
@@ -108,6 +111,7 @@ dependencies:
   '@ant-design/pro-table': registry.npmmirror.com/@ant-design/pro-table/2.66.3_0e56d7e74ae00b10dc75086c39f303a6
   '@ant-design/pro-utils': registry.npmmirror.com/@ant-design/pro-utils/1.35.2_0e56d7e74ae00b10dc75086c39f303a6
   antd: registry.npmmirror.com/antd/4.18.9_react-dom@17.0.2+react@17.0.2
+  codemirror: 5.60.0
   cross-spawn: registry.npmmirror.com/cross-spawn/7.0.3
   dexie: registry.npmmirror.com/dexie/3.2.1
   dexie-react-hooks: registry.npmmirror.com/dexie-react-hooks/1.1.1_cd4aac9a596d91421339a593582dcd09
@@ -120,6 +124,7 @@ dependencies:
   mysql: registry.npmmirror.com/mysql/2.18.1
   rc-virtual-list: registry.npmmirror.com/rc-virtual-list/3.4.2_react-dom@17.0.2+react@17.0.2
   react: registry.npmmirror.com/react/17.0.2
+  react-codemirror2: 7.2.1_codemirror@5.60.0+react@17.0.2
   react-color: registry.npmmirror.com/react-color/2.19.3_react@17.0.2
   react-dom: registry.npmmirror.com/react-dom/17.0.2_react@17.0.2
   react-router-dom: registry.npmmirror.com/react-router-dom/6.2.2_react-dom@17.0.2+react@17.0.2
@@ -131,6 +136,7 @@ devDependencies:
   '@teamsupercell/typings-for-css-modules-loader': registry.npmmirror.com/@teamsupercell/typings-for-css-modules-loader/2.5.1
   '@testing-library/jest-dom': registry.npmmirror.com/@testing-library/jest-dom/5.16.2
   '@testing-library/react': registry.npmmirror.com/@testing-library/react/12.1.3_react-dom@17.0.2+react@17.0.2
+  '@types/codemirror': 5.60.5
   '@types/cross-spawn': registry.npmmirror.com/@types/cross-spawn/6.0.2
   '@types/enzyme': registry.npmmirror.com/@types/enzyme/3.10.11
   '@types/enzyme-adapter-react-16': registry.npmmirror.com/@types/enzyme-adapter-react-16/1.0.6
@@ -371,6 +377,16 @@ packages:
       react: registry.npmmirror.com/react/17.0.2
     dev: false
 
+  /@types/codemirror/5.60.5:
+    resolution: {integrity: sha512-TiECZmm8St5YxjFUp64LK0c8WU5bxMDt9YaAek1UqUb9swrSCoJhh92fWu1p3mTEqlHjhB5sY7OFBhWroJXZVg==}
+    dependencies:
+      '@types/tern': 0.23.4
+    dev: true
+
+  /@types/estree/0.0.51:
+    resolution: {integrity: sha512-CuPgU6f3eT/XgKKPqKd/gLZV1Xmvf1a2R5POBOGQa6uv82xpls89HU5zKeVoyR8XzHd1RGNOlQlvUe3CFkjWNQ==}
+    dev: true
+
   /@types/glob/7.2.0:
     resolution: {integrity: sha512-ZUxbzKl0IfJILTS6t7ip5fQQM/J3TJYubDm3nMbgubNNYS62eXeUpoLUC8/7fJNiFYHTrGPQn7hspDUzIHX3UA==}
     requiresBuild: true
@@ -380,8 +396,18 @@ packages:
     dev: true
     optional: true
 
+  /@types/tern/0.23.4:
+    resolution: {integrity: sha512-JAUw1iXGO1qaWwEOzxTKJZ/5JxVeON9kvGZ/osgZaJImBnyjyn0cjovPsf6FNLmyGY8Vw9DoXZCMlfMkMwHRWg==}
+    dependencies:
+      '@types/estree': 0.0.51
+    dev: true
+
   /classnames/2.3.1:
     resolution: {integrity: sha512-OlQdbZ7gLfGarSqxesMesDa5uz7KFbID8Kpq/SxIoNGDqY8lSYs0D+hhtBXhcdB3rcbXArFr7vlHheLk1voeNA==}
+    dev: false
+
+  /codemirror/5.60.0:
+    resolution: {integrity: sha512-AEL7LhFOlxPlCL8IdTcJDblJm8yrAGib7I+DErJPdZd4l6imx8IMgKK3RblVgBQqz3TZJR4oknQ03bz+uNjBYA==}
     dev: false
 
   /dmg-license/1.0.11:
@@ -573,6 +599,16 @@ packages:
       react-dom: registry.npmmirror.com/react-dom/17.0.2_react@17.0.2
       react-is: 16.13.1
       shallowequal: 1.1.0
+    dev: false
+
+  /react-codemirror2/7.2.1_codemirror@5.60.0+react@17.0.2:
+    resolution: {integrity: sha512-t7YFmz1AXdlImgHXA9Ja0T6AWuopilub24jRaQdPVbzUJVNKIYuy3uCFZYa7CE5S3UW6SrSa5nAqVQvtzRF9gw==}
+    peerDependencies:
+      codemirror: 5.x
+      react: '>=15.5 <=16.x'
+    dependencies:
+      codemirror: 5.60.0
+      react: registry.npmmirror.com/react/17.0.2
     dev: false
 
   /react-color/2.19.3_react@17.0.2:
@@ -2054,7 +2090,7 @@ packages:
     version: 3.7.3
     dependencies:
       '@types/eslint': registry.npmmirror.com/@types/eslint/8.4.1
-      '@types/estree': registry.npmmirror.com/@types/estree/0.0.51
+      '@types/estree': 0.0.51
     dev: true
 
   registry.npmmirror.com/@types/eslint/8.4.1:
@@ -2062,7 +2098,7 @@ packages:
     name: '@types/eslint'
     version: 8.4.1
     dependencies:
-      '@types/estree': registry.npmmirror.com/@types/estree/0.0.51
+      '@types/estree': 0.0.51
       '@types/json-schema': registry.npmmirror.com/@types/json-schema/7.0.9
     dev: true
 
