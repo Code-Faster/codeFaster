@@ -66,6 +66,7 @@ const StepsForm: React.FC<StepsFormProps> = ({
     {
       title: '前置接口',
       dataIndex: 'importApiIndex',
+      valueType: 'digit',
     },
     {
       title: '返回参数',
@@ -122,20 +123,6 @@ const StepsForm: React.FC<StepsFormProps> = ({
             return [defaultDoms.delete];
           },
           onValuesChange: (record, recordList: Array<CodeFaster.FlowParam>) => {
-            console.log(record, recordList);
-            // if (record) {
-            //   let isUpdate = false;
-            //   recordList.forEach((e) => {
-            //     if (e.name === record.name) {
-            //       e = record;
-            //       isUpdate = true;
-            //     }
-            //   });
-            //   if (!isUpdate && record.name !== 'new') {
-            //     console.log('新增');
-            //     recordList.push(record);
-            //   }
-            // }
             setParamsList(recordList);
           },
           onChange: setEditableRowKeys,

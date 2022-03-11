@@ -29,22 +29,16 @@ import {
 import { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { TableRowSelection } from 'antd/lib/table/interface';
+import ProForm, { ModalForm, ProFormText } from '@ant-design/pro-form';
 import TestFlowStepsForm from 'renderer/components/StepsForm/TestFlowStepsForm';
 import styles from './index.module.less';
 import db from '../../dbModel';
 import DescriptionItem from '../../components/Description';
 import { UnControlled as UnControlledCodeMirror } from 'react-codemirror2';
 import 'codemirror/mode/javascript/javascript';
-import 'codemirror/addon/fold/foldcode.js'; // 代码折叠
-import 'codemirror/addon/fold/foldgutter.js'; // 代码折叠
-import 'codemirror/addon/fold/brace-fold.js'; // 代码折叠
-import 'codemirror/addon/fold/comment-fold.js'; // 代码折叠
-import 'codemirror/addon/hint/javascript-hint.js'; // 自动提示
 import 'codemirror/addon/selection/active-line.js'; // 当前行高亮
 import CodeMirror from 'codemirror/src/codemirror';
-import 'codemirror/addon/fold/foldgutter.css'; // 代码折叠
 import 'codemirror/lib/codemirror.css'; // 编辑器样式
-import 'codemirror/lib/codemirror.css';
 import 'codemirror/theme/material.css';
 
 import {
@@ -302,14 +296,40 @@ const ProjectPage: React.FC = () => {
       />
     );
   };
-
+  const execFetchApi = async (url: string, bodyData: Object) => {
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json;charset=utf-8',
+        // 'Content-Type': 'application/x-www-form-urlencoded',
+      },
+      body: JSON.stringify(bodyData),
+    });
+    if (!response.ok) {
+      logs.push(`「节点异常：」`);
+      setLogs(logs);
+      setLogsStr(logs.join('\r\n'));
+      Promise.reject();
+    }
+    return await response.json();
+  };
   // 执行流程测试
   const execTestFlow = async (flow: CodeFaster.TestFlow) => {
     logs.push(`【${flow.name}】流程开始执行`);
     const preApiResult: Array<any> = [];
-    flow.nodes.forEach((element) => {
-      const url = flow.apiPath + element.serviceApi;
-      logs.push(`「节点：」${url}`);
+    for (const element of flow.nodes) {
+      let url = flow.apiPath + element.serviceApi;
+      if (flow.apiOtherParams) {
+        const json = JSON.parse(flow.apiOtherParams);
+        const urlParmas = Object.keys(json)
+          .map(function (key) {
+            return (
+              encodeURIComponent(key) + '=' + encodeURIComponent(json[key])
+            );
+          })
+          .join('&');
+        url = url + '?' + urlParmas;
+      }
       if (element.service && element.service.requestMappingType === 'POST') {
         const result = Object.create(null);
         const paramsList = element.service.apiImplicitParamsText;
@@ -318,6 +338,7 @@ const ProjectPage: React.FC = () => {
             // 如果引入外部接口
             if (param.importApiIndex) {
               const curData = preApiResult[param.importApiIndex - 1];
+              console.log(curData);
               const resultStr = param.importApiResponse
                 ? param.importApiResponse.split('.')
                 : [];
@@ -349,31 +370,15 @@ const ProjectPage: React.FC = () => {
             }
           });
         }
+        logs.push(`「节点：」${url}`);
         logs.push(`「入参：」${JSON.stringify(result)}`);
-        fetch(url, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json;charset=utf-8',
-            // 'Content-Type': 'application/x-www-form-urlencoded',
-          },
-          body: JSON.stringify(result),
-        })
-          .then((res) => res.json())
-          .then((response) => {
-            logs.push(`「回参：」${JSON.stringify(response)}`);
-            preApiResult.push(response);
-            setLogs(logs);
-            setLogsStr(logs.join('\r\n'));
-            return response;
-          })
-          .catch((error) => {
-            console.log(error);
-            logs.push(`「节点异常：」${JSON.stringify(error | error.stack)}`);
-            setLogs(logs);
-            setLogsStr(logs.join('\r\n'));
-          });
+        const response = await execFetchApi(url, result);
+        logs.push(`「回参：」${JSON.stringify(response)}`);
+        preApiResult.push(response);
+        setLogs(logs);
+        setLogsStr(logs.join('\r\n'));
       }
-    });
+    }
   };
   // 流程列表
   const columns: ProColumns<CodeFaster.TestFlow>[] = [
@@ -445,7 +450,40 @@ const ProjectPage: React.FC = () => {
       ],
     },
   ];
-
+  // 导入流程测试
+  const ImportTestFlow = () => {
+    return (
+      <ModalForm<{
+        name: string;
+        company: string;
+      }>
+        title="导入流程"
+        trigger={
+          <Button type="primary" size="small">
+            导入流程
+          </Button>
+        }
+        autoFocusFirstInput
+        modalProps={{
+          onCancel: () => console.log('run'),
+        }}
+        onFinish={async (values) => {
+          // await waitTime(2000);
+          console.log(values.name);
+          message.success('提交成功');
+          return true;
+        }}
+      >
+        <ProFormText
+          width="md"
+          name="name"
+          label="流程数组"
+          tooltip="数组格式"
+          placeholder="请输入导出的流程数组"
+        />
+      </ModalForm>
+    );
+  };
   useEffect(() => {
     if (params.projectId) {
       db.projects
@@ -574,7 +612,7 @@ const ProjectPage: React.FC = () => {
                 ++cur
               )
                 cm.indentLine(cur, 'smart');
-              cm.setSelection(from, cm.getCursor(false));
+              cm.setSelection(from, cm.getCursor());
             });
           }}
         />
@@ -1536,10 +1574,7 @@ const ProjectPage: React.FC = () => {
               >
                 新建流程
               </Button>,
-
-              <Button type="primary" size="small" onClick={() => {}}>
-                导入流程
-              </Button>,
+              <ImportTestFlow />,
             ]}
             dataSource={flowList}
             options={false}

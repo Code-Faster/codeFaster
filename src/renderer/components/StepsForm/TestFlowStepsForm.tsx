@@ -345,7 +345,7 @@ const TestFlowStepsForm: React.FC<TestFlowStepsFormProps> = ({
             </Row>
             <Row gutter={16}>
               <Col span={24}>
-                <Form.Item name="apiOtherParams" label="额外参数">
+                <Form.Item name="apiOtherParams" label="额外参数" tooltip="此参数为接口URL后面的params">
                   <Input.TextArea
                     rows={4}
                     placeholder="请输入接口额外参数，JSON格式"

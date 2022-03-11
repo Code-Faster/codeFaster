@@ -4,6 +4,7 @@ specifiers:
   '@ant-design/icons': ^4.7.0
   '@ant-design/pro-card': ^1.18.37
   '@ant-design/pro-field': ^1.32.4
+  '@ant-design/pro-form': ^1.57.0
   '@ant-design/pro-table': 2.66.3
   '@ant-design/pro-utils': 1.35.2
   '@pmmmwh/react-refresh-webpack-plugin': 0.5.1
@@ -108,6 +109,7 @@ dependencies:
   '@ant-design/icons': registry.npmmirror.com/@ant-design/icons/4.7.0_react-dom@17.0.2+react@17.0.2
   '@ant-design/pro-card': 1.18.37_0e56d7e74ae00b10dc75086c39f303a6
   '@ant-design/pro-field': 1.32.4_0e56d7e74ae00b10dc75086c39f303a6
+  '@ant-design/pro-form': 1.57.0_0e56d7e74ae00b10dc75086c39f303a6
   '@ant-design/pro-table': registry.npmmirror.com/@ant-design/pro-table/2.66.3_0e56d7e74ae00b10dc75086c39f303a6
   '@ant-design/pro-utils': registry.npmmirror.com/@ant-design/pro-utils/1.35.2_0e56d7e74ae00b10dc75086c39f303a6
   antd: registry.npmmirror.com/antd/4.18.9_react-dom@17.0.2+react@17.0.2
@@ -302,6 +304,58 @@ packages:
       - react-dom
     dev: false
 
+  /@ant-design/pro-form/1.56.1_0e56d7e74ae00b10dc75086c39f303a6:
+    resolution: {integrity: sha512-ycXrRqfPkn8JPN4JrlIWsXYRMD3nKeXEsQP6L3cxTX2cNvrL5920BR28k1LFQnIHV1nvr+b9jSY7wSKPlXR05w==}
+    peerDependencies:
+      antd: '>=4.18.0'
+      rc-field-form: ^1.22.0
+      react: '>=16.9.0'
+      react-dom: '>=16.9.0'
+    dependencies:
+      '@ant-design/icons': 4.7.0_react-dom@17.0.2+react@17.0.2
+      '@ant-design/pro-field': 1.32.3_0e56d7e74ae00b10dc75086c39f303a6
+      '@ant-design/pro-provider': 1.6.0_0e56d7e74ae00b10dc75086c39f303a6
+      '@ant-design/pro-utils': 1.35.2_0e56d7e74ae00b10dc75086c39f303a6
+      '@babel/runtime': 7.17.2
+      '@umijs/use-params': registry.npmmirror.com/@umijs/use-params/1.0.9_react@17.0.2
+      antd: registry.npmmirror.com/antd/4.18.9_react-dom@17.0.2+react@17.0.2
+      classnames: 2.3.1
+      lodash: 4.17.21
+      omit.js: 2.0.2
+      rc-resize-observer: registry.npmmirror.com/rc-resize-observer/1.2.0_react-dom@17.0.2+react@17.0.2
+      rc-util: 5.18.1_react-dom@17.0.2+react@17.0.2
+      react: registry.npmmirror.com/react/17.0.2
+      react-dom: registry.npmmirror.com/react-dom/17.0.2_react@17.0.2
+      use-json-comparison: registry.npmmirror.com/use-json-comparison/1.0.6_react@17.0.2
+      use-media-antd-query: registry.npmmirror.com/use-media-antd-query/1.1.0_react@17.0.2
+    dev: false
+
+  /@ant-design/pro-form/1.57.0_0e56d7e74ae00b10dc75086c39f303a6:
+    resolution: {integrity: sha512-6KNYAiW5W29EAhWn1CMTphrVaadIe3NcUm3JE/mrhBlKDVGabmF0mqKz1WCw+S4BiOJttmRNoz8K0/ypTvXO2A==}
+    peerDependencies:
+      antd: '>=4.18.0'
+      rc-field-form: ^1.22.0
+      react: '>=16.9.0'
+      react-dom: '>=16.9.0'
+    dependencies:
+      '@ant-design/icons': 4.7.0_react-dom@17.0.2+react@17.0.2
+      '@ant-design/pro-field': 1.32.4_0e56d7e74ae00b10dc75086c39f303a6
+      '@ant-design/pro-provider': 1.6.0_0e56d7e74ae00b10dc75086c39f303a6
+      '@ant-design/pro-utils': 1.35.3_0e56d7e74ae00b10dc75086c39f303a6
+      '@babel/runtime': 7.17.2
+      '@umijs/use-params': 1.0.9_react@17.0.2
+      antd: registry.npmmirror.com/antd/4.18.9_react-dom@17.0.2+react@17.0.2
+      classnames: 2.3.1
+      lodash: 4.17.21
+      omit.js: 2.0.2
+      rc-resize-observer: 1.2.0_react-dom@17.0.2+react@17.0.2
+      rc-util: 5.18.1_react-dom@17.0.2+react@17.0.2
+      react: registry.npmmirror.com/react/17.0.2
+      react-dom: registry.npmmirror.com/react-dom/17.0.2_react@17.0.2
+      use-json-comparison: 1.0.6_react@17.0.2
+      use-media-antd-query: 1.1.0_react@17.0.2
+    dev: false
+
   /@ant-design/pro-provider/1.6.0_0e56d7e74ae00b10dc75086c39f303a6:
     resolution: {integrity: sha512-xq5GRfoYvwimSCWYZ6NyBaSfVz3ajEDIhMrTHpmzWmDGxRaPPFMS3Fio0cuAdU/KbDlZ1d0M8LuAvyEPvhYDFQ==}
     peerDependencies:
@@ -333,7 +387,7 @@ packages:
       rc-util: 5.18.1_react-dom@17.0.2+react@17.0.2
       react: registry.npmmirror.com/react/17.0.2
       react-dom: registry.npmmirror.com/react-dom/17.0.2_react@17.0.2
-      react-sortable-hoc: registry.npmmirror.com/react-sortable-hoc/2.0.0_react-dom@17.0.2+react@17.0.2
+      react-sortable-hoc: 2.0.0_react-dom@17.0.2+react@17.0.2
       swr: 1.2.2_react@17.0.2
     dev: false
 
@@ -401,6 +455,14 @@ packages:
     dependencies:
       '@types/estree': 0.0.51
     dev: true
+
+  /@umijs/use-params/1.0.9_react@17.0.2:
+    resolution: {integrity: sha512-QlN0RJSBVQBwLRNxbxjQ5qzqYIGn+K7USppMoIOVlf7fxXHsnQZ2bEsa6Pm74bt6DVQxpUE8HqvdStn6Y9FV1w==}
+    peerDependencies:
+      react: '*'
+    dependencies:
+      react: registry.npmmirror.com/react/17.0.2
+    dev: false
 
   /classnames/2.3.1:
     resolution: {integrity: sha512-OlQdbZ7gLfGarSqxesMesDa5uz7KFbID8Kpq/SxIoNGDqY8lSYs0D+hhtBXhcdB3rcbXArFr7vlHheLk1voeNA==}
@@ -588,6 +650,20 @@ packages:
       object-assign: 4.1.1
       react-is: 16.13.1
 
+  /rc-resize-observer/1.2.0_react-dom@17.0.2+react@17.0.2:
+    resolution: {integrity: sha512-6W+UzT3PyDM0wVCEHfoW3qTHPTvbdSgiA43buiy8PzmeMnfgnDeb9NjdimMXMl3/TcrvvWl5RRVdp+NqcR47pQ==}
+    peerDependencies:
+      react: '>=16.9.0'
+      react-dom: '>=16.9.0'
+    dependencies:
+      '@babel/runtime': 7.17.2
+      classnames: 2.3.1
+      rc-util: 5.18.1_react-dom@17.0.2+react@17.0.2
+      react: registry.npmmirror.com/react/17.0.2
+      react-dom: registry.npmmirror.com/react-dom/17.0.2_react@17.0.2
+      resize-observer-polyfill: 1.5.1
+    dev: false
+
   /rc-util/5.18.1_react-dom@17.0.2+react@17.0.2:
     resolution: {integrity: sha512-24xaSrMZUEKh1+suDOtJWfPe9E6YrwryViZcoPO0miJTKzP4qhUlV5AAlKQ82AJilz/AOHfi3l6HoX8qa1ye8w==}
     peerDependencies:
@@ -651,6 +727,10 @@ packages:
   /regenerator-runtime/0.13.9:
     resolution: {integrity: sha512-p3VT+cOEgxFsRRA9X4lkI1E+k2/CtnKtU4gcxyaCUreilL/vqI6CdZ3wxVUx3UOUg+gnUOQQcRI7BmSI656MYA==}
 
+  /resize-observer-polyfill/1.5.1:
+    resolution: {integrity: sha512-LwZrotdHOo12nQuZlHEmtuXdqGoOD0OhaxopaNFxWzInpEgaLWoVuAMbTzixuosCx2nEG58ngzW3vxdWoxIgdg==}
+    dev: false
+
   /shallowequal/1.1.0:
     resolution: {integrity: sha512-y0m1JoUZSlPAjXVtPPW70aZWfIL/dSP7AFkRnniLCrK/8MDKog3TySTBmckD+RObVxH0v4Tox67+F14PdED2oQ==}
     dev: false
@@ -680,6 +760,22 @@ packages:
 
   /tinycolor2/1.4.2:
     resolution: {integrity: sha512-vJhccZPs965sV/L2sU4oRQVAos0pQXwsvTLkWYdqJ+a8Q5kPFzJTuOFwy7UniPli44NKQGAglksjvOcpo95aZA==}
+    dev: false
+
+  /use-json-comparison/1.0.6_react@17.0.2:
+    resolution: {integrity: sha512-xPadt5yMRbEmVfOSGFSMqjjICrq7nLbfSH3rYIXsrtcuFX7PmbYDN/ku8ObBn3v8o/yZelO1OxUS5+5TI3+fUw==}
+    peerDependencies:
+      react: '>=16.9.0'
+    dependencies:
+      react: registry.npmmirror.com/react/17.0.2
+    dev: false
+
+  /use-media-antd-query/1.1.0_react@17.0.2:
+    resolution: {integrity: sha512-B6kKZwNV4R+l4Rl11sWO7HqOay9alzs1Vp1b4YJqjz33YxbltBCZtt/yxXxkXN9rc1S7OeEL/GbwC30Wmqhw6Q==}
+    peerDependencies:
+      react: '>=16.9.0'
+    dependencies:
+      react: registry.npmmirror.com/react/17.0.2
     dev: false
 
   registry.npmmirror.com/7zip-bin/5.1.1:
@@ -730,35 +826,6 @@ packages:
       react-dom: registry.npmmirror.com/react-dom/17.0.2_react@17.0.2
     dev: false
 
-  registry.npmmirror.com/@ant-design/pro-form/1.56.1_0e56d7e74ae00b10dc75086c39f303a6:
-    resolution: {integrity: sha512-ycXrRqfPkn8JPN4JrlIWsXYRMD3nKeXEsQP6L3cxTX2cNvrL5920BR28k1LFQnIHV1nvr+b9jSY7wSKPlXR05w==, registry: https://registry.npm.taobao.org/, tarball: https://registry.npmmirror.com/@ant-design/pro-form/-/pro-form-1.56.1.tgz}
-    id: registry.npmmirror.com/@ant-design/pro-form/1.56.1
-    name: '@ant-design/pro-form'
-    version: 1.56.1
-    peerDependencies:
-      antd: '>=4.18.0'
-      rc-field-form: ^1.22.0
-      react: '>=16.9.0'
-      react-dom: '>=16.9.0'
-    dependencies:
-      '@ant-design/icons': 4.7.0_react-dom@17.0.2+react@17.0.2
-      '@ant-design/pro-field': 1.32.3_0e56d7e74ae00b10dc75086c39f303a6
-      '@ant-design/pro-provider': 1.6.0_0e56d7e74ae00b10dc75086c39f303a6
-      '@ant-design/pro-utils': 1.35.2_0e56d7e74ae00b10dc75086c39f303a6
-      '@babel/runtime': 7.17.2
-      '@umijs/use-params': registry.npmmirror.com/@umijs/use-params/1.0.9_react@17.0.2
-      antd: registry.npmmirror.com/antd/4.18.9_react-dom@17.0.2+react@17.0.2
-      classnames: 2.3.1
-      lodash: 4.17.21
-      omit.js: 2.0.2
-      rc-resize-observer: registry.npmmirror.com/rc-resize-observer/1.2.0_react-dom@17.0.2+react@17.0.2
-      rc-util: 5.18.1_react-dom@17.0.2+react@17.0.2
-      react: registry.npmmirror.com/react/17.0.2
-      react-dom: registry.npmmirror.com/react-dom/17.0.2_react@17.0.2
-      use-json-comparison: registry.npmmirror.com/use-json-comparison/1.0.6_react@17.0.2
-      use-media-antd-query: registry.npmmirror.com/use-media-antd-query/1.1.0_react@17.0.2
-    dev: false
-
   registry.npmmirror.com/@ant-design/pro-provider/1.6.0_0e56d7e74ae00b10dc75086c39f303a6:
     resolution: {integrity: sha512-xq5GRfoYvwimSCWYZ6NyBaSfVz3ajEDIhMrTHpmzWmDGxRaPPFMS3Fio0cuAdU/KbDlZ1d0M8LuAvyEPvhYDFQ==, registry: https://registry.npm.taobao.org/, tarball: https://registry.npmmirror.com/@ant-design/pro-provider/-/pro-provider-1.6.0.tgz}
     id: registry.npmmirror.com/@ant-design/pro-provider/1.6.0
@@ -790,7 +857,7 @@ packages:
     dependencies:
       '@ant-design/icons': registry.npmmirror.com/@ant-design/icons/4.7.0_react-dom@17.0.2+react@17.0.2
       '@ant-design/pro-field': 1.32.3_0e56d7e74ae00b10dc75086c39f303a6
-      '@ant-design/pro-form': registry.npmmirror.com/@ant-design/pro-form/1.56.1_0e56d7e74ae00b10dc75086c39f303a6
+      '@ant-design/pro-form': 1.56.1_0e56d7e74ae00b10dc75086c39f303a6
       '@ant-design/pro-provider': registry.npmmirror.com/@ant-design/pro-provider/1.6.0_0e56d7e74ae00b10dc75086c39f303a6
       '@ant-design/pro-utils': registry.npmmirror.com/@ant-design/pro-utils/1.35.2_0e56d7e74ae00b10dc75086c39f303a6
       '@babel/runtime': registry.npmmirror.com/@babel/runtime/7.17.2
@@ -843,7 +910,7 @@ packages:
       json2mq: registry.npmmirror.com/json2mq/0.2.0
       lodash: 4.17.21
       react: registry.npmmirror.com/react/17.0.2
-      resize-observer-polyfill: registry.npmmirror.com/resize-observer-polyfill/1.5.1
+      resize-observer-polyfill: 1.5.1
     dev: false
 
   registry.npmmirror.com/@babel/code-frame/7.12.11:
@@ -11070,7 +11137,7 @@ packages:
       rc-util: 5.18.1_react-dom@17.0.2+react@17.0.2
       react: registry.npmmirror.com/react/17.0.2
       react-dom: registry.npmmirror.com/react-dom/17.0.2_react@17.0.2
-      resize-observer-polyfill: registry.npmmirror.com/resize-observer-polyfill/1.5.1
+      resize-observer-polyfill: 1.5.1
     dev: false
 
   registry.npmmirror.com/rc-cascader/3.2.7_react-dom@17.0.2+react@17.0.2:
@@ -11308,7 +11375,7 @@ packages:
     dependencies:
       '@babel/runtime': 7.17.2
       classnames: 2.3.1
-      rc-resize-observer: registry.npmmirror.com/rc-resize-observer/1.2.0_react-dom@17.0.2+react@17.0.2
+      rc-resize-observer: 1.2.0_react-dom@17.0.2+react@17.0.2
       rc-util: 5.18.1_react-dom@17.0.2+react@17.0.2
       react: registry.npmmirror.com/react/17.0.2
       react-dom: registry.npmmirror.com/react-dom/17.0.2_react@17.0.2
@@ -11486,7 +11553,7 @@ packages:
     dependencies:
       '@babel/runtime': 7.17.2
       classnames: 2.3.1
-      rc-resize-observer: registry.npmmirror.com/rc-resize-observer/1.2.0_react-dom@17.0.2+react@17.0.2
+      rc-resize-observer: 1.2.0_react-dom@17.0.2+react@17.0.2
       rc-util: 5.18.1_react-dom@17.0.2+react@17.0.2
       react: registry.npmmirror.com/react/17.0.2
       react-dom: registry.npmmirror.com/react-dom/17.0.2_react@17.0.2
@@ -11507,7 +11574,7 @@ packages:
       classnames: 2.3.1
       rc-dropdown: registry.npmmirror.com/rc-dropdown/3.2.5_react-dom@17.0.2+react@17.0.2
       rc-menu: registry.npmmirror.com/rc-menu/9.2.1_react-dom@17.0.2+react@17.0.2
-      rc-resize-observer: registry.npmmirror.com/rc-resize-observer/1.2.0_react-dom@17.0.2+react@17.0.2
+      rc-resize-observer: 1.2.0_react-dom@17.0.2+react@17.0.2
       rc-util: 5.18.1_react-dom@17.0.2+react@17.0.2
       react: registry.npmmirror.com/react/17.0.2
       react-dom: registry.npmmirror.com/react-dom/17.0.2_react@17.0.2
@@ -11524,7 +11591,7 @@ packages:
     dependencies:
       '@babel/runtime': 7.17.2
       classnames: 2.3.1
-      rc-resize-observer: registry.npmmirror.com/rc-resize-observer/1.2.0_react-dom@17.0.2+react@17.0.2
+      rc-resize-observer: 1.2.0_react-dom@17.0.2+react@17.0.2
       rc-util: 5.18.1_react-dom@17.0.2+react@17.0.2
       react: registry.npmmirror.com/react/17.0.2
       react-dom: registry.npmmirror.com/react-dom/17.0.2_react@17.0.2
