@@ -59,8 +59,14 @@ export default class TemplateLoader {
   }
 
   getPlugin(name: string) {
+    util.Logger.success(name);
+    util.Logger.success(this.modulesDir);
+    const pathStr = path.join(this.modulesDir, name);
     // 通过插件名获取插件
+    util.Logger.success(pathStr);
     // eslint-disable-next-line import/no-dynamic-require
-    return require(this.modulesDir + name);
+    const result = require(pathStr);
+    util.Logger.info(`对象${result}`);
+    return result;
   }
 }

@@ -322,11 +322,14 @@ export default class ipcHandler {
         project: CodeFaster.Project
       ): Promise<CodeFaster.Result<string>> => {
         try {
+          util.Logger.info('开始执行初始化项目');
+          util.Logger.info(`参数${JSON.stringify(project)}`);
           const GeneratorFactory = this.templateLoader.getPlugin(
             project.templateName
           );
           const codeGenerator: CodeFaster.JavaCodeGenerator =
             new GeneratorFactory(project);
+          util.Logger.info(`对象${JSON.stringify(codeGenerator)}`);
           codeGenerator.init({
             /** 其他参数 */
             props: {},
