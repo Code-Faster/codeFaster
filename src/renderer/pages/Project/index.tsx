@@ -31,13 +31,15 @@ import { useParams } from 'react-router-dom';
 import { TableRowSelection } from 'antd/lib/table/interface';
 import { ModalForm, ProFormTextArea } from '@ant-design/pro-form';
 import TestFlowStepsForm from 'renderer/components/StepsForm/TestFlowStepsForm';
+import { UnControlled as UnControlledCodeMirror } from 'react-codemirror2';
+import CodeMirror from 'codemirror/src/codemirror';
+import ProTable, { ProColumns } from '@ant-design/pro-table';
+import ProCard from '@ant-design/pro-card';
 import styles from './index.module.less';
 import db from '../../dbModel';
 import DescriptionItem from '../../components/Description';
-import { UnControlled as UnControlledCodeMirror } from 'react-codemirror2';
 import 'codemirror/mode/javascript/javascript';
 import 'codemirror/addon/selection/active-line.js'; // 当前行高亮
-import CodeMirror from 'codemirror/src/codemirror';
 import 'codemirror/lib/codemirror.css'; // 编辑器样式
 import 'codemirror/theme/material.css';
 
@@ -50,8 +52,6 @@ import {
   generatorCURD,
   buildModelJson,
 } from '../../util';
-import ProTable, { ProColumns } from '@ant-design/pro-table';
-import ProCard from '@ant-design/pro-card';
 
 const { TabPane } = Tabs;
 const { Title } = Typography;

@@ -1,4 +1,3 @@
-import { useLiveQuery } from 'dexie-react-hooks';
 import { SearchOutlined } from '@ant-design/icons';
 import { useEffect, useState } from 'react';
 import {
@@ -26,7 +25,22 @@ const TemplatePage: React.FC = () => {
   const [templateResult, setTemplateResult] = useState<Npm.NpmTemplateResult>();
   const [activityResult, setActivityResult] = useState<Npm.Package>();
   const [installDetail, setInstallDetail] = useState<CodeFaster.Template>();
+  const [list, setList] = useState<Array<CodeFaster.Template>>([]);
 
+  /** 查询数据库连接 */
+  const queryAllTemplate = () => {
+    TemplateDatabase.templates
+      .toArray()
+      .then((data) => {
+        if (data) {
+          setList(data);
+        }
+        return data;
+      })
+      .catch((e) => {
+        console.error(e.stack || e);
+      });
+  };
   const fetchNpm = async (params = '') => {
     const response = await fetch(
       `https://registry.npmjs.com/-/v1/search?text=${prefix}${params}`
@@ -74,6 +88,7 @@ const TemplatePage: React.FC = () => {
           ]);
           console.log(result);
           message.success({ content: '安装成功！' });
+          queryAllTemplate();
           return result;
         }
         message.error('本地已安装');
@@ -100,6 +115,7 @@ const TemplatePage: React.FC = () => {
           const result = await execNpmCommand('uninstall', [ele.templateName]);
           console.log(result);
           message.success({ content: '删除成功！' });
+          queryAllTemplate();
           return deleteCount;
         })
         .catch((e) => {
@@ -114,15 +130,14 @@ const TemplatePage: React.FC = () => {
     console.log(result);
     message.success({ content: '更新成功！' });
   };
-  const list = useLiveQuery(async () => {
-    return TemplateDatabase.templates.toArray();
-  });
 
   const getColor = () => {
     return `#${Math.floor(Math.random() * 16777215).toString(16)}`;
   };
+
   useEffect(() => {
     fetchNpm();
+    queryAllTemplate();
     return () => {};
   }, []);
   return (

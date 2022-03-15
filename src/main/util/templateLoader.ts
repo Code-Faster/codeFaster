@@ -28,7 +28,7 @@ export default class TemplateLoader {
     this.basePath = PLAYGROUND_PATH;
     this.modulesDir = path.join(PLAYGROUND_PATH, 'node_modules/');
     this.packagePath = path.join(PLAYGROUND_PATH, 'package.json');
-    util.Logger.success('模版加载器启动！');
+    util.Logger.success('The template loader starts 模版加载器启动！');
     util.Logger.info(`__dirname=${__dirname}`);
     util.Logger.info(`PLAYGROUND_PATH=${PLAYGROUND_PATH}`);
   }

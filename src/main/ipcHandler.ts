@@ -205,7 +205,7 @@ export default class ipcHandler {
   constructor() {
     // 执行模版加载器
     this.templateLoader = new TemplateLoader().init();
-    util.Logger.success('事件通信启动！');
+    util.Logger.success('Event communication starts 事件通信启动！');
   }
 
   init() {
