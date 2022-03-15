@@ -1,4 +1,5 @@
-/* eslint-disable import/extensions */
+/* eslint-disable @typescript-eslint/no-shadow */
+/* eslint-disable no-plusplus */
 import {
   ConsoleSqlOutlined,
   FolderOpenOutlined,
@@ -39,7 +40,7 @@ import styles from './index.module.less';
 import db from '../../dbModel';
 import DescriptionItem from '../../components/Description';
 import 'codemirror/mode/javascript/javascript';
-import 'codemirror/addon/selection/active-line.js'; // 当前行高亮
+import 'codemirror/addon/selection/active-line'; // 当前行高亮
 import 'codemirror/lib/codemirror.css'; // 编辑器样式
 import 'codemirror/theme/material.css';
 
@@ -296,7 +297,7 @@ const ProjectPage: React.FC = () => {
       />
     );
   };
-  const execFetchApi = async (url: string, bodyData: Object) => {
+  const execFetchApi = async (url: string, bodyData: any) => {
     const response = await fetch(url, {
       method: 'POST',
       headers: {
@@ -309,9 +310,8 @@ const ProjectPage: React.FC = () => {
       logs.push(`「节点异常：」`);
       setLogs(logs);
       setLogsStr(logs.join('\r\n'));
-      Promise.reject();
     }
-    return await response.json();
+    return response.json();
   };
   // 执行流程测试
   const execTestFlow = async (flow: CodeFaster.TestFlow) => {
@@ -323,12 +323,12 @@ const ProjectPage: React.FC = () => {
         const json = JSON.parse(flow.apiOtherParams);
         const urlParmas = Object.keys(json)
           .map(function (key) {
-            return (
-              encodeURIComponent(key) + '=' + encodeURIComponent(json[key])
-            );
+            return `${encodeURIComponent(
+              key
+            )}=${encodeURIComponent(json[key])}`;
           })
           .join('&');
-        url = url + '?' + urlParmas;
+        url = `${url}?${urlParmas}`;
       }
       if (element.service && element.service.requestMappingType === 'POST') {
         const result = Object.create(null);
@@ -344,7 +344,7 @@ const ProjectPage: React.FC = () => {
                 : [];
               if (resultStr.length === 0) return;
               let curVar = curData[resultStr[0]];
-              resultStr.forEach((str: any, index: number) => {
+              resultStr.forEach((str: unknown, index: number) => {
                 if (index > 0) {
                   if (str.indexOf('[') > 0) {
                     // 数组形参数
@@ -472,14 +472,13 @@ const ProjectPage: React.FC = () => {
           const importList: Array<CodeFaster.TestFlow> = JSON.parse(
             values.name
           );
-          console.log(importList);
-          for (const iterator of importList) {
+          importList.forEach((iterator) => {
             // 重置导出数据的ID
             iterator.id = undefined;
             // 保存流程
             db.testFlows.add(iterator);
             loadTestFlow();
-          }
+          });
           message.success('提交成功');
           return true;
         }}
@@ -547,7 +546,7 @@ const ProjectPage: React.FC = () => {
       <CreateTestFlow />
       <Drawer
         title="导出流程信息"
-        placement={'bottom'}
+        placement="bottom"
         onClose={() => {
           setShowExportTestFlow(false);
         }}
@@ -568,30 +567,34 @@ const ProjectPage: React.FC = () => {
             indentUnit: 4,
           }}
           onFocus={(editor) => {
-            let totalLines = editor.lineCount();
+            const totalLines = editor.lineCount();
             const from = { line: 0, ch: 0 };
             const to = { line: totalLines, ch: 0 };
-            var cm = editor;
-            var outer = cm.getMode(),
-              text = cm.getRange(from, to).split('\n');
-            var state = CodeMirror.copyState(outer, cm.getTokenAt(from).state);
-            var tabSize = cm.getOption('tabSize');
+            const cm = editor;
+            const outer = cm.getMode();
+            const text = cm.getRange(from, to).split('\n');
+            const state = CodeMirror.copyState(
+              outer,
+              cm.getTokenAt(from).state
+            );
+            const tabSize = cm.getOption('tabSize');
 
-            var out = '',
-              lines = 0,
-              atSol = from.ch == 0;
+            let out = '';
+            let lines = 0;
+            let atSol = from.ch === 0;
             function newline() {
               out += '\n';
               atSol = true;
+              // eslint-disable-next-line no-plusplus
               ++lines;
             }
 
-            for (var i = 0; i < text.length; ++i) {
-              var stream = new CodeMirror.StringStream(text[i], tabSize);
+            for (let i = 0; i < text.length; ++i) {
+              const stream = new CodeMirror.StringStream(text[i], tabSize);
               while (!stream.eol()) {
-                var inner = CodeMirror.innerMode(outer, state);
-                var style = outer.token(stream, state),
-                  cur = stream.current();
+                const inner = CodeMirror.innerMode(outer, state);
+                const style = outer.token(stream, state);
+                const cur = stream.current();
                 stream.start = stream.pos;
                 if (!atSol || /\S/.test(cur)) {
                   out += cur;
@@ -616,7 +619,7 @@ const ProjectPage: React.FC = () => {
             cm.operation(function () {
               cm.replaceRange(out, from, to);
               for (
-                var cur = from.line + 1, end = from.line + lines;
+                let cur = from.line + 1, end = from.line + lines;
                 cur <= end;
                 ++cur
               )
@@ -641,6 +644,7 @@ const ProjectPage: React.FC = () => {
             initProject(project);
             updateProjectConfig(project)
               .then((e) => {
+                setProjectJSON(e);
                 return e;
               })
               .catch((e) => {
@@ -1549,9 +1553,13 @@ const ProjectPage: React.FC = () => {
               <Space size={24}>
                 <span>
                   已选 {selectedRowKeys.length} 项
-                  <a style={{ marginLeft: 8 }} onClick={onCleanSelected}>
+                  <Button
+                    style={{ marginLeft: 8 }}
+                    onClick={onCleanSelected}
+                    type="link"
+                  >
                     取消选择
-                  </a>
+                  </Button>
                 </span>
               </Space>
             )}

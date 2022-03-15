@@ -338,9 +338,9 @@ const HelloPage: React.FC = () => {
             <Button type="primary" size="small" onClick={importProject}>
               导入项目
             </Button>
-            <Button type="primary" size="small">
+            {/* <Button type="primary" size="small">
               从Git获取项目
-            </Button>
+            </Button> */}
           </Space>
         </Col>
       </Row>
