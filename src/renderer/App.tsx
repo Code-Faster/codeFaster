@@ -1,5 +1,5 @@
 import { Link, Outlet, Route, Routes } from 'react-router-dom';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import './App.css';
 import 'antd/dist/antd.variable.min.css';
 import {
@@ -13,6 +13,7 @@ import {
   Row,
   Space,
   Tooltip,
+  Drawer,
 } from 'antd';
 import {
   QuestionCircleTwoTone,
@@ -20,7 +21,9 @@ import {
   ControlOutlined,
   ArrowUpOutlined,
   AppstoreOutlined,
+  CodeTwoTone,
 } from '@ant-design/icons';
+import { UnControlled as UnControlledCodeMirror } from 'react-codemirror2';
 import icon from '../../assets/icon.svg';
 import LoginPage from './pages/Login';
 import ProjectPage from './pages/Project';
@@ -30,6 +33,9 @@ import CustomizePage from './pages/Customize';
 import PlusPage from './pages/Plus';
 import DocsPage from './pages/Docs';
 import TemplatePage from './pages/Template';
+import {
+  getLoggerList
+} from './util';
 
 const { Header, Sider, Content } = Layout;
 const { Text } = Typography;
@@ -42,6 +48,8 @@ const App = () => {
    * 潘通2022年流行色
    */
   const bgColor = '#6667AB';
+  const [showLogs, setShowLogs] = useState<boolean>(false);
+  const [logs, setLogs] = useState<string>('');
   useEffect(() => {
     ConfigProvider.config({
       theme: {
@@ -52,6 +60,25 @@ const App = () => {
   }, []);
   return (
     <Layout style={{ height: '100%' }}>
+      <Drawer
+        title="日志信息"
+        placement="bottom"
+        onClose={() => {
+          setShowLogs(false);
+        }}
+        visible={showLogs}
+        key="exportTestFlow"
+      >
+        <UnControlledCodeMirror
+          value={logs}
+          options={{
+            mode: 'javascript',
+            theme: 'material',
+            lineNumbers: true,
+          }}
+          onChange={(editor, data, value) => {}}
+        />
+      </Drawer>
       <Sider>
         <Row style={{ padding: '50px 0 5px' }}>
           {/* <Avatar
@@ -96,11 +123,26 @@ const App = () => {
         </Menu>
       </Sider>
       <Layout>
-        <Header className="uDrag" style={{ height: 48 }}>
+        <Header style={{ height: 48 }}>
           <Row style={{ height: 48, lineHeight: '48px' }}>
-            <Col span={23} />
-            <Col span={1}>
+            <Col span={21}  className="uDrag" />
+            <Col span={3}>
               <Space>
+                <Tooltip title="查看日志">
+                  <Button
+                    type="default"
+                    size="small"
+                    icon={<CodeTwoTone color={bgColor} />}
+                    style={{ boxShadow: 'none' }}
+                    onClick={async (e) => {
+                      e.stopPropagation();
+                      const logs = await getLoggerList();
+                      console.log(logs);
+                      setLogs(logs.join('\r\n'));
+                      setShowLogs(true);
+                    }}
+                  />
+                </Tooltip>
                 <Tooltip title="发现新版本">
                   <Button
                     type="default"

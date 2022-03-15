@@ -167,3 +167,11 @@ export const getApis = async (
   }
   return arg.data;
 };
+
+/** 获取后台日志 */
+export const getLoggerList = async () => {
+  const arg = await window.electron.ipcRenderer
+    .execInvokeTask(window.electron.channel.getLoggerList)
+    .catch(console.log);
+  return arg;
+};
