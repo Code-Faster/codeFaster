@@ -25,18 +25,14 @@ const devtoolsConfig =
       }
     : {};
 
-export default merge(baseConfig, {
+const configuration: webpack.Configuration = {
   ...devtoolsConfig,
 
   mode: 'production',
 
   target: ['web', 'electron-renderer'],
 
-  entry: [
-    'core-js',
-    'regenerator-runtime/runtime',
-    path.join(webpackPaths.srcRendererPath, 'index.tsx'),
-  ],
+  entry: [path.join(webpackPaths.srcRendererPath, 'index.tsx')],
 
   output: {
     path: webpackPaths.distRendererPath,
@@ -128,4 +124,6 @@ export default merge(baseConfig, {
       isDevelopment: process.env.NODE_ENV !== 'production',
     }),
   ],
-});
+};
+
+export default merge(baseConfig, configuration);

@@ -19,7 +19,7 @@ import {
 } from 'antd';
 // eslint-disable-next-line import/order
 import styles from './index.module.less';
-import 'antd/dist/antd.variable.min.css';
+// import 'antd/dist/antd.variable.min.css';
 import Meta from 'antd/lib/card/Meta';
 import { useState } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';

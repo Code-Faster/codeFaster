@@ -138,7 +138,12 @@ const TemplatePage: React.FC = () => {
   useEffect(() => {
     fetchNpm();
     queryAllTemplate();
-    return () => {};
+    return () => {
+      setList([]);
+      setActivityResult(Object.create(null));
+      setTemplateResult(Object.create(null));
+      setInstallDetail(Object.create(null));
+    };
   }, []);
   return (
     <div>

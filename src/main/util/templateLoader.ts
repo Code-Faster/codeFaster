@@ -1,9 +1,12 @@
 /* eslint-disable global-require */
-import path from 'path';
+import path, { dirname } from 'path';
 import fs from 'fs-extra';
 import resolve from 'resolve';
 import util from '.';
+import fileOpt from './fileOpt';
+import Module from 'module';
 
+const vm = require('vm');
 /** 模版所在目录 */
 export const PLAYGROUND_PATH = path.resolve(
   process.env.NODE_ENV === 'development' || process.env.DEBUG_PROD === 'true'
@@ -59,14 +62,63 @@ export default class TemplateLoader {
   }
 
   getPlugin(name: string) {
-    util.Logger.success(name);
-    util.Logger.success(this.modulesDir);
-    const pathStr = path.join(this.modulesDir, name);
+    if (name === undefined) {
+      util.Logger.error(`name can not be undefined`);
+      throw new Error('name can not be undefined');
+    }
+    const templateTopPath = path.join(this.modulesDir, name);
+    const packageJsonPath = path.join(templateTopPath, 'package.json');
+    const packagejson = fileOpt.fileReader(packageJsonPath);
+    const templateReleasePath = path.join(
+      templateTopPath,
+      JSON.parse(packagejson).main
+    );
     // 通过插件名获取插件
-    util.Logger.success(pathStr);
+    util.Logger.success(templateTopPath);
     // eslint-disable-next-line import/no-dynamic-require
-    const result = require(pathStr);
-    util.Logger.info(`对象${result}`);
+    // const result = await import(pathStr);
+    // console.log(result.default);
+    const result = this.load(templateReleasePath);
+    // const result = require(templateTopPath);
+    // util.Logger.info(`${result}`);
+    return result;
+  }
+
+  load(filePath: string) {
+    console.log('templateReleasePath', filePath);
+    let script = fileOpt.fileReader(filePath);
+    const module = new Module(filePath);
+    module.filename = filePath;
+    module.paths = Module._nodeModulePaths(filePath);
+
+    function req(_path: string) {
+      return module.require(_path);
+    }
+
+    req.resolve = (request: any) => Module._resolveFilename(request, module);
+
+    req.main = require.main;
+    req.cache = Module._cache;
+
+    script = `(function(exports, require, module, __filename, __dirname, cf){${script};return module.exports;\n});`;
+
+    const compiledWrapper = vm.runInThisContext(script, {
+      filePath,
+      lineOffset: 0,
+      displayErrors: true,
+    });
+
+    const result = compiledWrapper(
+      module.exports,
+      req,
+      module,
+      filePath,
+      dirname(filePath),
+      this
+    );
+
+    console.log('compiledWrapper', result);
+
     return result;
   }
 }

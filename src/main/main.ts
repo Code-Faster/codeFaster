@@ -32,8 +32,8 @@ let mainWindow: BrowserWindow | null = null;
  * 渲染进行调用主进程任务 end
  */
 if (process.env.NODE_ENV === 'production') {
-  // const sourceMapSupport = require('source-map-support');
-  // sourceMapSupport.install();
+  const sourceMapSupport = require('source-map-support');
+  sourceMapSupport.install();
 }
 
 const isDevelopment =

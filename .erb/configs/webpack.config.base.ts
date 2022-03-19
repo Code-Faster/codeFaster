@@ -5,7 +5,8 @@
 import webpack from 'webpack';
 import webpackPaths from './webpack.paths';
 import { dependencies as externals } from '../../release/app/package.json';
-export default {
+
+const configuration: webpack.Configuration = {
   externals: [...Object.keys(externals || {})],
 
   stats: 'errors-only',
@@ -34,6 +35,8 @@ export default {
               lessOptions: {
                 javascriptEnabled: true,
                 modifyVars: {
+                  'primary-color': '#1DA57A',
+                  'link-color': '#1DA57A',
                   '@root-entry-name': 'default',
                 },
               },
@@ -56,7 +59,7 @@ export default {
    * Determine the array of extensions that should be used to resolve modules.
    */
   resolve: {
-    extensions: ['.js', '.jsx', '.json', '.ts', '.tsx','.less'],
+    extensions: ['.js', '.jsx', '.json', '.ts', '.tsx'],
     modules: [webpackPaths.srcPath, 'node_modules'],
   },
 
@@ -66,3 +69,5 @@ export default {
     }),
   ],
 };
+
+export default configuration;

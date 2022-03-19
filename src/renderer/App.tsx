@@ -1,7 +1,8 @@
 import { Link, Outlet, Route, Routes } from 'react-router-dom';
 import { useEffect, useState } from 'react';
 import './App.css';
-import 'antd/dist/antd.variable.min.css';
+import 'antd/dist/antd.less';
+// import 'antd/dist/antd.variable.min.css';
 import {
   ConfigProvider,
   Typography,

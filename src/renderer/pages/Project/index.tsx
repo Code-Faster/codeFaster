@@ -36,7 +36,6 @@ import { UnControlled as UnControlledCodeMirror } from 'react-codemirror2';
 import CodeMirror from 'codemirror/src/codemirror';
 import ProTable, { ProColumns } from '@ant-design/pro-table';
 import ProCard from '@ant-design/pro-card';
-import styles from './index.module.less';
 import db from '../../dbModel';
 import DescriptionItem from '../../components/Description';
 import 'codemirror/mode/javascript/javascript';
