@@ -182,7 +182,7 @@ export default class ipcHandler {
         try {
           util.Logger.info('开始执行初始化项目');
           util.Logger.info(`参数${JSON.stringify(project)}`);
-          const GeneratorFactory =  this.templateLoader.getPlugin(
+          const GeneratorFactory = this.templateLoader.getPlugin(
             project.templateName
           );
           const codeGenerator: CodeFaster.JavaCodeGenerator =
@@ -212,12 +212,17 @@ export default class ipcHandler {
         model: CodeFaster.ModelForm
       ): Promise<CodeFaster.Result<string>> => {
         try {
-          const GeneratorFactory =  this.templateLoader.getPlugin(
+          const GeneratorFactory = this.templateLoader.getPlugin(
             project.templateName
           );
           const codeGenerator: CodeFaster.JavaCodeGenerator =
             new GeneratorFactory(project);
           model.tableArray.forEach((ele: CodeFaster.SqlTable) => {
+            // 下划线转驼峰
+            ele.tableCloums.map((e) => {
+              e.columnName = tranformHumpStr(e.columnName);
+              return e;
+            });
             codeGenerator.generatorPojo({
               /** 其他参数 */
               props: {},
@@ -254,7 +259,7 @@ export default class ipcHandler {
         params: CodeFaster.CURDForm
       ): Promise<CodeFaster.Result<string>> => {
         try {
-          const GeneratorFactory =  this.templateLoader.getPlugin(
+          const GeneratorFactory = this.templateLoader.getPlugin(
             project.templateName
           );
           const codeGenerator: CodeFaster.JavaCodeGenerator =
@@ -316,7 +321,7 @@ export default class ipcHandler {
         _event,
         project: CodeFaster.Project
       ): Promise<CodeFaster.Result<CodeFaster.ConfigJSON | undefined>> => {
-        const GeneratorFactory =  this.templateLoader.getPlugin(
+        const GeneratorFactory = this.templateLoader.getPlugin(
           project.templateName
         );
         const codeGenerator: CodeFaster.JavaCodeGenerator =

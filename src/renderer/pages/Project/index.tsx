@@ -718,7 +718,9 @@ const ProjectPage: React.FC = () => {
                             basicForm.setFieldsValue({
                               defaultPojoPath: (
                                 await openDialog({
-                                  defaultPath: project.projectDir,
+                                  defaultPath:
+                                    project.defaultPojoPath ||
+                                    project.projectDir,
                                   properties: ['openDirectory'],
                                 })
                               ).path,
@@ -751,7 +753,8 @@ const ProjectPage: React.FC = () => {
                             basicForm.setFieldsValue({
                               defaultVoPath: (
                                 await openDialog({
-                                  defaultPath: project.projectDir,
+                                  defaultPath:
+                                    project.defaultVoPath || project.projectDir,
                                   properties: ['openDirectory'],
                                 })
                               ).path,
@@ -784,7 +787,9 @@ const ProjectPage: React.FC = () => {
                             basicForm.setFieldsValue({
                               defaultServicePath: (
                                 await openDialog({
-                                  defaultPath: project.projectDir,
+                                  defaultPath:
+                                    project.defaultServicePath ||
+                                    project.projectDir,
                                   properties: ['openDirectory'],
                                 })
                               ).path,
@@ -819,7 +824,9 @@ const ProjectPage: React.FC = () => {
                             basicForm.setFieldsValue({
                               defaultServiceImplPath: (
                                 await openDialog({
-                                  defaultPath: project.projectDir,
+                                  defaultPath:
+                                    project.defaultServiceImplPath ||
+                                    project.projectDir,
                                   properties: ['openDirectory'],
                                 })
                               ).path,
@@ -854,7 +861,9 @@ const ProjectPage: React.FC = () => {
                             basicForm.setFieldsValue({
                               defaultControllerPath: (
                                 await openDialog({
-                                  defaultPath: project.projectDir,
+                                  defaultPath:
+                                    project.defaultControllerPath ||
+                                    project.projectDir,
                                   properties: ['openDirectory'],
                                 })
                               ).path,
@@ -887,7 +896,9 @@ const ProjectPage: React.FC = () => {
                             basicForm.setFieldsValue({
                               defaultMapperPath: (
                                 await openDialog({
-                                  defaultPath: project.projectDir,
+                                  defaultPath:
+                                    project.defaultMapperPath ||
+                                    project.projectDir,
                                   properties: ['openDirectory'],
                                 })
                               ).path,
@@ -922,7 +933,9 @@ const ProjectPage: React.FC = () => {
                             basicForm.setFieldsValue({
                               defaultUnitTestPath: (
                                 await openDialog({
-                                  defaultPath: project.projectDir,
+                                  defaultPath:
+                                    project.defaultUnitTestPath ||
+                                    project.projectDir,
                                   properties: ['openDirectory'],
                                 })
                               ).path,
@@ -1091,6 +1104,10 @@ const ProjectPage: React.FC = () => {
                     {
                       title: '表名',
                       dataIndex: 'tableName',
+                    },
+                    {
+                      title: '备注',
+                      dataIndex: 'tableComment',
                     },
                   ]}
                   dataSource={sqlList}

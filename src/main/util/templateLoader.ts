@@ -75,12 +75,9 @@ export default class TemplateLoader {
     );
     // 通过插件名获取插件
     util.Logger.success(templateTopPath);
-    // eslint-disable-next-line import/no-dynamic-require
     // const result = await import(pathStr);
-    // console.log(result.default);
     const result = this.load(templateReleasePath);
     // const result = require(templateTopPath);
-    // util.Logger.info(`${result}`);
     return result;
   }
 

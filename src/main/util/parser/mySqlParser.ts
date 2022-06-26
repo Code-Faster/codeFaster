@@ -6,12 +6,14 @@ const mySql = (dataName: string, data: Array<any>, sql: Array<any>) => {
   const comment =
     'PRIMARY KEY (`id`), UNIQUE INDEX `id_UNIQUE` (`id` ASC) VISIBLE) ENGINE = InnoDB COMMENT = ';
   data.forEach((item) => {
+    const tableName = item.TABLE_NAME || item.table_name;
+    const tableComment = item.TABLE_COMMENT || item.table_comment;
     const tableObj: CodeFaster.SqlTable = {
       tableCloums: [],
       dbName: dataName,
-      tableComment: item.TABLE_COMMENT,
-      tableName: item.TABLE_NAME,
-      tableSql: `${TABLE_SPLIT_STR}${dataName}.${item.TABLE_NAME} (`,
+      tableComment,
+      tableName,
+      tableSql: `${TABLE_SPLIT_STR}${dataName}.${tableName} (`,
     };
     sql.forEach((e) => {
       const obj: CodeFaster.SqlColumn = {
@@ -19,7 +21,7 @@ const mySql = (dataName: string, data: Array<any>, sql: Array<any>) => {
         columnName: '',
         columnType: '',
       };
-      if (item.TABLE_NAME === e.TABLE_NAME) {
+      if (tableName === e.TABLE_NAME) {
         obj.columnComment = e.COLUMN_COMMENT;
         obj.columnName = e.COLUMN_NAME;
         // 处理字段类型
@@ -76,9 +78,9 @@ const mySql = (dataName: string, data: Array<any>, sql: Array<any>) => {
           `;
       }
     });
-    tableObj.tableSql += item.TABLE_COMMENT
-      ? comment + item.TABLE_COMMENT
-      : comment + item.TABLE_NAME;
+    tableObj.tableSql += tableComment
+      ? comment + tableComment
+      : comment + tableName;
     resultList.push(tableObj);
   });
   return resultList;
