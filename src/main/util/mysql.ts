@@ -1,16 +1,16 @@
-import mysql, { Connection } from 'mysql';
+const mysql = require('mysql2');
 
 class MysqlOpt {
-  public connection: Connection;
+  public pool;
 
   constructor(sqlConnction: CodeFaster.SqlConnection) {
-    this.connection = mysql.createConnection(sqlConnction);
-    this.connection.connect();
+    // 创建一个数据库连接
+    this.pool = mysql.createPool(sqlConnction);
   }
 
   query(sqlStr: string): Promise<unknown> {
     const res = new Promise((resolve) => {
-      this.connection.query(sqlStr, (error, results) => {
+      this.pool.query(sqlStr, (error: any, results: unknown) => {
         if (error) throw error;
         resolve(results);
       });
